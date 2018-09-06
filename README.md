@@ -1,5 +1,5 @@
 # web-crawler
-collect data from web(JD.com, dangdang.com, etc)
+collect data from web(JD.com, dangdang.com, etc.)
 
 ### 相对于[原版程序](https://github.com/LewisTian/RAM-JD)，该版本主要改动如下：
 - 1.设计成在命令行环境下运行，后面的第一个参数为搜索关键字。如`jingdong.py 笔记本内存条`

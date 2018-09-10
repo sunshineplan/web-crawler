@@ -104,7 +104,10 @@ class NB():
             for i in row:
                 result.append(i.text.strip())
             result.append(link)
-            print('\t'.join(result))
+            try:
+                print('\t'.join(result))
+            except:
+                print('[Error]Print error. href:' + link)
 
     def run(self):
         url = self.url + 'search.jsp?menuName={0}&year={1}&d-3995381-p={2}'
@@ -115,7 +118,10 @@ class NB():
                 page = self.getPage(n,y)
                 i = 1
                 while i <= page:
-                    self.parse(self.openUrl(url.format(quote(n, encoding='gbk'), y, i)))
+                    try:
+                        self.parse(self.openUrl(url.format(quote(n, encoding='gbk'), y, i)))
+                    except:
+                        pass
                     i += 1
                     sleep(1)
 

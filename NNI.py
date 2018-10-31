@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-from LiteratureEntity import LiteratureEntity
-from LiteratureList import LiteratureList
-from LiteratureTitle import LiteratureTitle
+from nnilib.LiteratureEntity import LiteratureEntity
+from nnilib.LiteratureList import LiteratureList
+from nnilib.LiteratureTitle import LiteratureTitle
 
 import logging
 logger = logging.getLogger(__name__)

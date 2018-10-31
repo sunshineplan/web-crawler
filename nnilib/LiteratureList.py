@@ -10,7 +10,7 @@ from urllib.request import build_opener
 from math import ceil
 from time import sleep
 from time import time
-from csv import DictWriter
+from lib.output import saveCSV
 
 import logging
 logger = logging.getLogger(__name__)
@@ -106,10 +106,7 @@ class LiteratureList():
                 logger.critical("Failed to get page %s's contents. Continuing...", i)
             i += 1
             sleep(60)
-        with open(self.filename, 'w', encoding='utf8', newline='') as output_file:
-            output = DictWriter(output_file, self.fieldnames, extrasaction='ignore')
-            output.writeheader()
-            output.writerows(documents)
+        saveCSV(self.filename, self.fieldnames, documents)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
         logger.info('Output filename: %s', self.filename)

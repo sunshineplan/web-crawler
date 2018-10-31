@@ -8,6 +8,18 @@ from urllib.parse import quote
 from urllib.request import build_opener
 from time import sleep
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('web-crawler.log')
+#fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 class dangdang():
     def __init__(self, keyword):
@@ -22,7 +34,7 @@ class dangdang():
                 html = self.opener.open(url).read()
                 break
             except:
-                print('[Error]Encounter error when opening ' + url)
+                logger.error('[Error]Encounter error when opening %s', url)
                 sleep(30)
         soupContent = BeautifulSoup(html, 'html.parser', from_encoding='GBK')
         return soupContent
@@ -40,7 +52,7 @@ class dangdang():
     def getPage(self):
         html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.quoteKeyword))
         if html.find(attrs={'name':'noResult_correct'}) is not None:
-            print('抱歉，没有找到商品。')
+            logger.info('抱歉，没有找到商品。Exiting...')
             sys.exit()
         content = html.find_all(attrs={'name':'bottom-page-turn'})
         pageList = []
@@ -50,6 +62,7 @@ class dangdang():
             page = int(pageList[-2])
         except:
             page = 1
+        logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
         return page
 
     def run(self):
@@ -59,7 +72,6 @@ class dangdang():
             self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
             i += 1
             sleep(2)
-        print('\n结果总共' + str(page) + '页')
 
 
 if __name__ == "__main__":

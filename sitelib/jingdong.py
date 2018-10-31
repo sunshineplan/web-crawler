@@ -7,6 +7,18 @@ from urllib.parse import quote
 from urllib.request import build_opener
 from time import sleep
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('web-crawler.log')
+#fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 class JD():
     def __init__(self, keyword):
@@ -22,7 +34,7 @@ class JD():
                 html = self.opener.open(url).read()
                 break
             except:
-                print('[Error]Encounter error when opening ' + url)
+                logger.error('[Error]Encounter error when opening %s', url)
                 sleep(30)
         soupContent = BeautifulSoup(html, 'html.parser')
         return soupContent
@@ -40,9 +52,10 @@ class JD():
     def getPage(self):
         html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
         if html.find('div', class_='check-error') is not None:
-            print('汪~没有找到商品。')
+            logger.info('汪~没有找到商品。Exiting...')
             sys.exit()
         page = html.find('span', class_='fp-text').i.text
+        logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
         return page
 
     def run(self):
@@ -56,7 +69,6 @@ class JD():
             self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
             i += 1
             sleep(1.5)
-        print('\n结果总共' + str(page) + '页')
 
 
 if __name__ == "__main__":

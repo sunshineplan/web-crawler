@@ -38,11 +38,9 @@ def main():
     parse_args = MainParser().parse_args()
     if parse_args.mode == 'jd':
         logger.info('Operation Mode: JD.com')
-        logger.info('Keyword: %s', parse_args.content)
         job = JD(parse_args.content)
     elif parse_args.mode == 'dd':
         logger.info('Operation Mode: dangdang.com')
-        logger.info('Keyword: %s', parse_args.content)
         job = dangdang(parse_args.content)
     job.run()
 

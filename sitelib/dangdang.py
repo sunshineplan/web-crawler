@@ -13,8 +13,8 @@ class dangdang():
     def __init__(self, keyword):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.page = self.getPage()
         self.opener = build_opener()
+        self.page = self.getPage()
 
     def openUrl(self, url):
         for attempts in range(10):

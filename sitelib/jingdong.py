@@ -12,9 +12,9 @@ class JD():
     def __init__(self, keyword):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.page = self.getPage()
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
+        self.page = self.getPage()
 
     def openUrl(self, url):
         for attempts in range(10):

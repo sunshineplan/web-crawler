@@ -12,6 +12,7 @@ class JD():
     def __init__(self, keyword):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
+        self.page = self.getPage()
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
 
@@ -46,7 +47,7 @@ class JD():
 
     def run(self):
         url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
-        page = int(self.getPage())
+        page = int(self.page)
         i = 1
         while i < page * 2 + 1:
             self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1)))

@@ -13,6 +13,7 @@ class dangdang():
     def __init__(self, keyword):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
+        self.page = self.getPage()
         self.opener = build_opener()
 
     def openUrl(self, url):
@@ -52,10 +53,9 @@ class dangdang():
         return page
 
     def run(self):
-        page = self.getPage()
         url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
         i = 1
-        while i <= page:
+        while i <= self.page:
             self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
             i += 1
             sleep(2)

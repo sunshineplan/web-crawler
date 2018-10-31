@@ -11,8 +11,9 @@ from time import sleep
 class JD():
     def __init__(self, keyword):
         self.keyword = keyword
+        self.quoteKeyword = quote(keyword)
         self.opener = build_opener()
-        self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.keyword)))
+        self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
 
     def openUrl(self, url):
         for attempts in range(10):
@@ -36,7 +37,7 @@ class JD():
                 pass
 
     def getPage(self):
-        html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.keyword))
+        html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
         if html.find('div', class_='check-error') is not None:
             print('汪~没有找到商品。')
             sys.exit()
@@ -48,15 +49,15 @@ class JD():
         page = int(self.getPage())
         i = 1
         while i < page * 2 + 1:
-            self.parse(self.openUrl(url.format(self.keyword, i, (i - 1) * 30 + 1)))
+            self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1)))
             i += 1
             sleep(1.5)
-            self.parse(self.openUrl(url.format(self.keyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
+            self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
             i += 1
             sleep(1.5)
         print('\n结果总共' + str(page) + '页')
 
 
 if __name__ == "__main__":
-    job = JD(quote(sys.argv[1]))
+    job = JD(sys.argv[1])
     job.run()

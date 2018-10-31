@@ -12,6 +12,7 @@ from time import sleep
 class dangdang():
     def __init__(self, keyword):
         self.keyword = keyword
+        self.quoteKeyword = quote(keyword)
         self.opener = build_opener()
 
     def openUrl(self, url):
@@ -36,7 +37,7 @@ class dangdang():
                 pass
 
     def getPage(self):
-        html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.keyword))
+        html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.quoteKeyword))
         if html.find(attrs={'name':'noResult_correct'}) is not None:
             print('抱歉，没有找到商品。')
             sys.exit()
@@ -55,12 +56,12 @@ class dangdang():
         url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
         i = 1
         while i <= page:
-            self.parse(self.openUrl(url.format(self.keyword, i)))
+            self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
             i += 1
             sleep(2)
         print('\n结果总共' + str(page) + '页')
 
 
 if __name__ == "__main__":
-    job = dangdang(quote(sys.argv[1]))
+    job = dangdang(sys.argv[1])
     job.run()

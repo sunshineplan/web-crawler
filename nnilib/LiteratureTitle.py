@@ -9,7 +9,6 @@ from urllib.request import urlopen
 from math import ceil
 from time import sleep
 from time import time
-from time import strftime
 from lib.output import saveCSV
 
 import logging

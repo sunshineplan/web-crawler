@@ -29,10 +29,10 @@ class dangdang():
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.path = path
         self.opener = build_opener()
         self.page = self.getPage()
         self.fieldnames = ['Name', 'Now Price', 'List Price', 'Author', 'Publisher', 'URL']
+        self.storepath = path
         self.filename = 'dangdang' + strftime('%Y%m%d') + '.csv'
 
     def openUrl(self, url):
@@ -101,9 +101,9 @@ class dangdang():
             i += 1
             sleep(2)
         try:
-            fullpath = saveCSV(self.filename, self.fieldnames, result, self.path)
+            fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:
-            logger.error('No such directory: "%s", use currect directory instead.', self.path)
+            logger.error('No such directory: "%s", use currect directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

@@ -28,11 +28,11 @@ class JD():
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.path = path
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
         self.page = self.getPage()
         self.fieldnames = ['Name', 'Price', 'URL']
+        self.storepath = path
         self.filename = 'jingdong' + strftime('%Y%m%d') + '.csv'
 
     def openUrl(self, url):
@@ -86,9 +86,9 @@ class JD():
             i += 1
             sleep(1.5)
         try:
-            fullpath = saveCSV(self.filename, self.fieldnames, result, self.path)
+            fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:
-            logger.error('No such directory: "%s", use currect directory instead.', self.path)
+            logger.error('No such directory: "%s", use currect directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

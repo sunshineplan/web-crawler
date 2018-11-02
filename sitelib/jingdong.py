@@ -7,7 +7,8 @@ from urllib.parse import quote
 from urllib.request import build_opener
 from time import sleep
 from time import time
-from time import strftime 
+from time import strftime
+sys.path.append("..")
 from lib.output import saveCSV
 
 import logging

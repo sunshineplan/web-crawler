@@ -32,23 +32,29 @@ def MainParser():
         'content',
         help='search keyword',
         metavar='<content>')
+    parser.add_argument(
+        '-d',
+        help='output directory',
+        default='',
+        dest='path',
+        metavar='<dir>')
     return parser
 
 def main():
     parse_args = MainParser().parse_args()
     if parse_args.mode == 'jd':
         logger.info('Operation Mode: JD.com')
-        job = JD(parse_args.content)
+        job = JD(parse_args.content, parse_args.path)
         job.run()
     elif parse_args.mode == 'dd':
         logger.info('Operation Mode: dangdang.com')
-        job = dangdang(parse_args.content)
+        job = dangdang(parse_args.content, parse_args.path)
         job.run()
     elif parse_args.mode == 'all':
         logger.info('Operation Mode: All')
-        job = JD(parse_args.content)
+        job = JD(parse_args.content, parse_args.path)
         job.run()
-        job = dangdang(parse_args.content)
+        job = dangdang(parse_args.content, parse_args.path)
         job.run()
 
 

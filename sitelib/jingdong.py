@@ -24,9 +24,10 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 class JD():
-    def __init__(self, keyword):
+    def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
+        self.path = path
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
         self.page = self.getPage()
@@ -83,12 +84,22 @@ class JD():
             result += self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
             i += 1
             sleep(1.5)
-        saveCSV(self.filename, self.fieldnames, result)
+        try:
+            fullpath = saveCSV(self.filename, self.fieldnames, result, self.path)
+        except FileNotFoundError:
+            logger.error('No such directory: "%s", use currect directory instead.', self.path)
+            fullpath = saveCSV(self.filename, self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
-        logger.info('Output filename: %s', self.filename)
+        logger.info('Output filename: %s', fullpath)
 
 
 if __name__ == "__main__":
-    job = JD(sys.argv[1])
-    job.run()
+    if len(sys.argv) == 3:
+        job = JD(sys.argv[1], sys.argv[2])
+        job.run()
+    elif len(sys.argv) == 2:
+        job = JD(sys.argv[1])
+        job.run()
+    else:
+        logger.critical('Wrong number of arguments.')

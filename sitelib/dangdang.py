@@ -25,9 +25,10 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 class dangdang():
-    def __init__(self, keyword):
+    def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
+        self.path = path
         self.opener = build_opener()
         self.page = self.getPage()
         self.fieldnames = ['Name', 'Now Price', 'List Price', 'Author', 'Publisher', 'URL']
@@ -98,12 +99,22 @@ class dangdang():
             result += self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
             i += 1
             sleep(2)
-        saveCSV(self.filename, self.fieldnames, result)
+        try:
+            fullpath = saveCSV(self.filename, self.fieldnames, result, self.path)
+        except FileNotFoundError:
+            logger.error('No such directory: "%s", use currect directory instead.', self.path)
+            fullpath = saveCSV(self.filename, self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
-        logger.info('Output filename: %s', self.filename)
+        logger.info('Output filename: %s', fullpath)
 
 
 if __name__ == "__main__":
-    job = dangdang(sys.argv[1])
-    job.run()
+    if len(sys.argv) == 3:
+        job = dangdang(sys.argv[1], sys.argv[2])
+        job.run()
+    elif len(sys.argv) == 2:
+        job = dangdang(sys.argv[1])
+        job.run()
+    else:
+        logger.critical('Wrong number of arguments.')

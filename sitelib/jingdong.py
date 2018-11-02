@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
 from time import sleep
+from time import time
+from time import strftime 
+from lib.output import saveCSV
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,27 +30,36 @@ class JD():
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
         self.page = self.getPage()
+        self.fieldnames = ['Name', 'Price', 'URL']
+        self.filename = 'jingdong' + strftime('%Y%m%d') + '.csv'
 
     def openUrl(self, url):
         for attempts in range(10):
             try:
+                logger.debug('Opening url %s', url)
                 html = self.opener.open(url).read()
                 break
             except:
-                logger.error('[Error]Encounter error when opening %s', url)
+                logger.error('Encounter error when opening %s', url)
                 sleep(30)
         soupContent = BeautifulSoup(html, 'html.parser')
         return soupContent
 
     def parse(self, content):
         content = content.find_all('li', class_='gl-item')
+        result = []
         for i in content:
-            name = i.find('div', class_='p-name').a.em.text
-            price = i.find('div', class_='p-price').strong.i.text
-            try:
-                print(name + '$' + price)
-            except:
-                pass
+            name = i.find('div', class_='p-name').a.em
+            price = i.find('div', class_='p-price').strong.i
+            url = 'https:' + i.find('div', class_='p-name').a['href']
+            record = {}
+            if name is not None:
+                record['Name'] = name.text.strip()
+            if price is not None:
+                record['Price'] = price.text.strip()
+            record['URL'] = url
+            result.append(record)
+        return result
 
     def getPage(self):
         html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
@@ -59,16 +71,22 @@ class JD():
         return page
 
     def run(self):
+        beginTime=time()
         url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
         page = int(self.page)
         i = 1
+        result = []
         while i < page * 2 + 1:
-            self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1)))
+            result += self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1)))
             i += 1
             sleep(1.5)
-            self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
+            result += self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
             i += 1
             sleep(1.5)
+        saveCSV(self.filename, self.fieldnames, result)
+        timeCost='%.2f' % (time() - beginTime)
+        logger.info('Total time: %ss', timeCost)
+        logger.info('Output filename: %s', self.filename)
 
 
 if __name__ == "__main__":

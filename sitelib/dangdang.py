@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
 from time import sleep
+from time import time
+from time import strftime 
+from lib.output import saveCSV
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,27 +30,48 @@ class dangdang():
         self.quoteKeyword = quote(keyword)
         self.opener = build_opener()
         self.page = self.getPage()
+        self.fieldnames = ['Name', 'Now Price', 'List Price', 'Author', 'Publisher', 'URL']
+        self.filename = 'dangdang' + strftime('%Y%m%d') + '.csv'
 
     def openUrl(self, url):
         for attempts in range(10):
             try:
+                logger.debug('Opening url %s', url)
                 html = self.opener.open(url).read()
                 break
             except:
-                logger.error('[Error]Encounter error when opening %s', url)
+                logger.error('Encounter error when opening %s', url)
                 sleep(30)
         soupContent = BeautifulSoup(html, 'html.parser', from_encoding='GBK')
         return soupContent
 
     def parse(self, html):
         html = html.find_all('li', class_=re.compile('line'))
+        result = []
         for i in html:
-            name = i.find('p', class_='name').a.text
-            price = i.find('span', class_='search_now_price').text
-            try:
-                print(name + price.replace('¥', '$'))
-            except:
-                pass
+            name = i.find('a', attrs={'name':'itemlist-title'})
+            now_price = i.find('span', class_='search_now_price')
+            list_price = i.find('span', class_='search_pre_price')
+            author = i.find_all('a', attrs={'name':'itemlist-author'})
+            publisher = i.find('a', attrs={'name':'P_cbs'})
+            url = i.find('a', attrs={'name':'itemlist-title'})['href']
+            record = {}
+            if name is not None:
+                record['Name'] = name.text.strip()
+            if now_price is not None:
+                record['Now Price'] = now_price.text.replace('¥', '').strip()
+            if list_price is not None:
+                record['List Price'] = list_price.text.replace('¥', '').strip()
+            if author is not None:
+                author_list = []
+                for i in author:
+                    author_list.append(i.text.strip())
+                record['Author'] = ','.join(author_list)
+            if publisher is not None:
+                record['Publisher'] = publisher.text.strip()
+            record['URL'] = url
+            result.append(record)
+        return result
 
     def getPage(self):
         html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.quoteKeyword))
@@ -66,12 +90,18 @@ class dangdang():
         return page
 
     def run(self):
+        beginTime=time()
         url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
         i = 1
+        result = []
         while i <= self.page:
-            self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
+            result += self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
             i += 1
             sleep(2)
+        saveCSV(self.filename, self.fieldnames, result)
+        timeCost='%.2f' % (time() - beginTime)
+        logger.info('Total time: %ss', timeCost)
+        logger.info('Output filename: %s', self.filename)
 
 
 if __name__ == "__main__":

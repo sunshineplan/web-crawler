@@ -22,8 +22,8 @@ def MainParser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-m',
-        help='choose operation mode (jd/dd)',
-        choices=['jd', 'dd'],
+        help='choose operation mode (jd/dd/All)',
+        choices=['jd', 'dd', 'all'],
         dest='mode',
         metavar='<mode>',
         type=str.lower,
@@ -39,10 +39,17 @@ def main():
     if parse_args.mode == 'jd':
         logger.info('Operation Mode: JD.com')
         job = JD(parse_args.content)
+        job.run()
     elif parse_args.mode == 'dd':
         logger.info('Operation Mode: dangdang.com')
         job = dangdang(parse_args.content)
-    job.run()
+        job.run()
+    elif parse_args.mode == 'all':
+        logger.info('Operation Mode: All')
+        job = JD(parse_args.content)
+        job.run()
+        job = dangdang(parse_args.content)
+        job.run()
 
 
 if __name__ == '__main__':

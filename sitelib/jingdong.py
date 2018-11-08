@@ -8,6 +8,7 @@ from urllib.request import build_opener
 from time import sleep
 from time import time
 from time import strftime
+from random import randint
 sys.path.append("..")
 from lib.output import saveCSV
 
@@ -88,8 +89,11 @@ class JD():
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:
-            logger.error('No such directory: "%s", use currect directory instead.', self.storepath)
+            logger.error('No such directory: "%s", use current directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
+        except PermissionError:
+            logger.error('Failed to write output file, use current directory and temporary filename instead.')
+            fullpath = saveCSV('temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
         logger.info('Output filename: %s', fullpath)

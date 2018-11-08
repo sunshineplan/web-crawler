@@ -34,7 +34,7 @@ class JD():
         self.page = self.getPage()
         self.fieldnames = ['Name', 'Price', 'URL']
         self.storepath = path
-        self.filename = 'jingdong' + strftime('%Y%m%d') + '.csv'
+        self.filename = 'jingdong' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def openUrl(self, url):
         for attempts in range(10):

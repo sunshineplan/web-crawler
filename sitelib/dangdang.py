@@ -34,7 +34,7 @@ class dangdang():
         self.page = self.getPage()
         self.fieldnames = ['Name', 'Now Price', 'List Price', 'Author', 'Publisher', 'URL']
         self.storepath = path
-        self.filename = 'dangdang' + strftime('%Y%m%d') + '.csv'
+        self.filename = 'dangdang' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def openUrl(self, url):
         for attempts in range(10):

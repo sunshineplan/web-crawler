@@ -52,15 +52,15 @@ class JD():
         content = content.find_all('li', class_='gl-item')
         result = []
         for i in content:
-            name = i.find('div', class_='p-name').a.em
-            price = i.find('div', class_='p-price').strong.i
-            url = 'https:' + i.find('div', class_='p-name').a
+            name = i.find('div', class_='p-name')
+            price = i.find('div', class_='p-price')
+            url = i.find('div', class_='p-name')
             record = {}
             try:
-                record['Name'] = name.text.strip()
-                record['Price'] = price.text.strip()
+                record['Name'] = name.a.em.text.strip()
+                record['Price'] = price.strong.i.text.strip()
                 if url is not None:
-                    record['URL'] = url['href']
+                    record['URL'] = 'https:' + url.a['href']
                 result.append(record)
             except:
                 logger.error('A corrupted record was skipped.')

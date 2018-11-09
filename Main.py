@@ -30,6 +30,7 @@ def MainParser():
         required=True)
     parser.add_argument(
         'content',
+        nargs='+',
         help='search keyword',
         metavar='<content>')
     parser.add_argument(
@@ -44,18 +45,22 @@ def main():
     parse_args = MainParser().parse_args()
     if parse_args.mode == 'jd':
         logger.info('Operation Mode: JD.com')
-        job = JD(parse_args.content, parse_args.path)
-        job.run()
+        for i in parse_args.content:
+            job = JD(i, parse_args.path)
+            job.run()
     elif parse_args.mode == 'dd':
         logger.info('Operation Mode: dangdang.com')
-        job = dangdang(parse_args.content, parse_args.path)
-        job.run()
+        for i in parse_args.content:
+            job = dangdang(i, parse_args.path)
+            job.run()
     elif parse_args.mode == 'all':
         logger.info('Operation Mode: All')
-        job = JD(parse_args.content, parse_args.path)
-        job.run()
-        job = dangdang(parse_args.content, parse_args.path)
-        job.run()
+        for i in parse_args.content:
+            job = JD(i, parse_args.path)
+            job.run()
+        for i in parse_args.content:
+            job = dangdang(i, parse_args.path)
+            job.run()
 
 
 if __name__ == '__main__':

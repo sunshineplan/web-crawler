@@ -57,23 +57,25 @@ class dangdang():
             list_price = i.find('span', class_='search_pre_price')
             author = i.find_all('a', attrs={'name':'itemlist-author'})
             publisher = i.find('a', attrs={'name':'P_cbs'})
-            url = i.find('a', attrs={'name':'itemlist-title'})['href']
+            url = i.find('a', attrs={'name':'itemlist-title'})
             record = {}
-            if name is not None:
+            try:
                 record['Name'] = name.text.strip()
-            if now_price is not None:
                 record['Now Price'] = now_price.text.replace('¥', '').strip()
-            if list_price is not None:
-                record['List Price'] = list_price.text.replace('¥', '').strip()
-            if author is not None:
-                author_list = []
-                for i in author:
-                    author_list.append(i.text.strip())
-                record['Author'] = ','.join(author_list)
-            if publisher is not None:
-                record['Publisher'] = publisher.text.strip()
-            record['URL'] = url
-            result.append(record)
+                if list_price is not None:
+                    record['List Price'] = list_price.text.replace('¥', '').strip()
+                if author is not None:
+                    author_list = []
+                    for i in author:
+                        author_list.append(i.text.strip())
+                    record['Author'] = ','.join(author_list)
+                if publisher is not None:
+                    record['Publisher'] = publisher.text.strip()
+                if url is not None:
+                    record['URL'] = url['href']
+                result.append(record)
+            except:
+                logger.error('A corrupted record was skipped.')
         return result
 
     def getPage(self):

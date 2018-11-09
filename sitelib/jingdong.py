@@ -54,14 +54,16 @@ class JD():
         for i in content:
             name = i.find('div', class_='p-name').a.em
             price = i.find('div', class_='p-price').strong.i
-            url = 'https:' + i.find('div', class_='p-name').a['href']
+            url = 'https:' + i.find('div', class_='p-name').a
             record = {}
-            if name is not None:
+            try:
                 record['Name'] = name.text.strip()
-            if price is not None:
                 record['Price'] = price.text.strip()
-            record['URL'] = url
-            result.append(record)
+                if url is not None:
+                    record['URL'] = url['href']
+                result.append(record)
+            except:
+                logger.error('A corrupted record was skipped.')
         return result
 
     def getPage(self):

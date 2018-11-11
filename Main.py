@@ -4,6 +4,7 @@
 import argparse
 from sitelib.dangdang import dangdang
 from sitelib.jingdong import JD
+from sitelib.amazon import Amazon
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def MainParser():
     parser.add_argument(
         '-m',
         help='choose operation mode (jd/dd/All)',
-        choices=['jd', 'dd', 'all'],
+        choices=['jd', 'dd', 'az', 'all'],
         dest='mode',
         metavar='<mode>',
         type=str.lower,
@@ -53,6 +54,11 @@ def main():
         for i in parse_args.content:
             job = dangdang(i, parse_args.path)
             job.run()
+    elif parse_args.mode == 'az':
+        logger.info('Operation Mode: amazon.cn')
+        for i in parse_args.content:
+            job = Amazon(i, parse_args.path)
+            job.run()
     elif parse_args.mode == 'all':
         logger.info('Operation Mode: All')
         for i in parse_args.content:
@@ -60,6 +66,9 @@ def main():
             job.run()
         for i in parse_args.content:
             job = dangdang(i, parse_args.path)
+            job.run()
+        for i in parse_args.content:
+            job = Amazon(i, parse_args.path)
             job.run()
 
 

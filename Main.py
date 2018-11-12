@@ -20,7 +20,7 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 def MainParser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage='%(prog)s [-h] <content> [<content> ...] -m <mode> [<mode> ...] [-d <dir>]')
     parser.add_argument(
         '-m',
         nargs='+',

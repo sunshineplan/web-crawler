@@ -55,7 +55,7 @@ class Amazon():
         self.filename = 'amazon' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def getHeaders(self):
-        for attempts in range(5):
+        for attempts in range(10):
             try:
                 url = 'https://www.amazon.cn'
                 agent = self.agent[randint(0, 10)]
@@ -89,8 +89,8 @@ class Amazon():
                 break
             except:
                 logger.error('Failed to get headers. Please wait to retry...')
-                sleep(30)
-        logger.debug('Cookies: %s', cookies)
+                sleep(300)
+        #logger.debug('Cookies: %s', cookies)
         return {'Cookie':cookies, 'User-Agent': agent}
 
     def getPage(self, headers):
@@ -109,7 +109,7 @@ class Amazon():
         return page
 
     def openUrl(self, url, headers):
-        for attempts in range(10):
+        for attempts in range(3):
             try:
                 logger.debug('Opening url %s', url)
                 request = Request(url, headers=dict(self.headers, **headers))
@@ -138,7 +138,7 @@ class Amazon():
     def parseBook(self, id, headers):
         result = []
         url = 'https://www.amazon.cn/dp/{0}'.format(id)
-        for attempts in range(3):
+        for attempts in range(2):
             try:
                 html = self.openUrl(url, headers)
                 name = html.find('span', id='productTitle')
@@ -174,7 +174,7 @@ class Amazon():
     def run(self):
         beginTime=time()
         url = 'https://www.amazon.cn/s/ref=sr_pg_1?rh=n:658390051,k:{0}&page={1}&sort=date-desc-rank'
-        for attempts in range(10):
+        for attempts in range(5):
             try:
                 headers = self.getHeaders()
                 page = self.getPage(headers)
@@ -198,7 +198,7 @@ class Amazon():
                     error = 0
                     break
                 except:
-                    logger.error('Failed to parse contents. Please wait to retry...')
+                    logger.error('Failed to parse contents(Page: %s). Please wait to retry...', i)
                     sleep(30)
                     try:
                         headers = self.getHeaders()
@@ -210,10 +210,10 @@ class Amazon():
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:
-            logger.error('No such directory: "%s", use current directory instead.', self.storepath)
+            logger.error('Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         except PermissionError:
-            logger.error('Failed to write output file, use current directory and temporary filename instead.')
+            logger.error('Failed to write output file, destination file may be locked. Use current directory and temporary filename instead.')
             fullpath = saveCSV('temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

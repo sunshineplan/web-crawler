@@ -23,6 +23,7 @@ def MainParser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-m',
+        nargs='+',
         help='choose operation mode (jd/dd/All)',
         choices=['jd', 'dd', 'az', 'all'],
         dest='mode',
@@ -44,33 +45,28 @@ def MainParser():
 
 def main():
     parse_args = MainParser().parse_args()
-    if parse_args.mode == 'jd':
-        logger.info('Operation Mode: JD.com')
-        for i in parse_args.content:
-            job = JD(i, parse_args.path)
-            job.run()
-    elif parse_args.mode == 'dd':
-        logger.info('Operation Mode: dangdang.com')
-        for i in parse_args.content:
-            job = dangdang(i, parse_args.path)
-            job.run()
-    elif parse_args.mode == 'az':
-        logger.info('Operation Mode: amazon.cn')
-        for i in parse_args.content:
-            job = Amazon(i, parse_args.path)
-            job.run()
-    elif parse_args.mode == 'all':
+    if 'all' in parse_args.mode:
         logger.info('Operation Mode: All')
         for i in parse_args.content:
-            job = JD(i, parse_args.path)
-            job.run()
+            JD(i, parse_args.path).run()
         for i in parse_args.content:
-            job = dangdang(i, parse_args.path)
-            job.run()
+            dangdang(i, parse_args.path).run()
         for i in parse_args.content:
-            job = Amazon(i, parse_args.path)
-            job.run()
+            Amazon(i, parse_args.path).run()
+    else:
+        if 'jd' in parse_args.mode:
+            logger.info('Operation Mode: JD.com')
+            for i in parse_args.content:
+                JD(i, parse_args.path).run()
+        if 'dd' in parse_args.mode:
+            logger.info('Operation Mode: dangdang.com')
+            for i in parse_args.content:
+                dangdang(i, parse_args.path).run()
+        if 'az' in parse_args.mode:
+            logger.info('Operation Mode: amazon.cn')
+            for i in parse_args.content:
+                Amazon(i, parse_args.path).run()
 
-
+                
 if __name__ == '__main__':
     main()

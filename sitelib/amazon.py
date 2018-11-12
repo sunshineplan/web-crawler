@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import Request
 from urllib.request import urlopen
+from multiprocessing.pool import ThreadPool
+from functools import partial
 from gzip import decompress
 from math import ceil
 from time import sleep
@@ -129,10 +131,23 @@ class Amazon():
         result = []
         for i in content:
             bookList.append(i['data-asin'])
-        for id in bookList:
-            record, headers = self.parseBook(id, headers)
-            result += record
-            sleep(4)
+        while True:
+            pool = ThreadPool(processes=8)
+            return_list = pool.map(partial(self.parseBook, headers=headers), bookList, chunksize=1)
+            pool.close()
+            bookList = []
+            for record, id in return_list:
+                result += record
+                bookList += id
+            if bookList == []:
+                break
+            else:
+                sleep(60)
+                headers = self.getHeaders()
+        #for id in bookList:
+            #record, headers = self.parseBook(id, headers)
+            #result += record
+            #sleep(4)
         return result, headers
 
     def parseBook(self, id, headers):
@@ -164,12 +179,14 @@ class Amazon():
                     record['Author'] = author.a.text.strip()
                 record['URL'] = url
                 result.append(record)
+                error = 0
                 break
             except:
-                logger.error('Failed to get book info. Please wait to retry...')
-                sleep(30)
-                headers = self.getHeaders()
-        return result, headers
+                logger.error('Failed to get book info(id: %s). Please wait to retry...', id)
+                error = 1
+        if error == 1:
+            return [], id
+        return result, ''
 
     def run(self):
         beginTime=time()

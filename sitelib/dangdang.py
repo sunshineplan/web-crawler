@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
+from multiprocessing.pool import ThreadPool
 from time import sleep
 from time import time
 from time import strftime
@@ -64,7 +65,9 @@ class dangdang():
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
         return page
 
-    def parse(self, html):
+    def parse(self, page):
+        url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
+        html = self.openUrl(url.format(self.quoteKeyword, page))
         html = html.find_all('li', class_=re.compile('line'))
         result = []
         for i in html:
@@ -92,17 +95,19 @@ class dangdang():
                 result.append(record)
             except:
                 logger.error('A corrupted record was skipped.')
+        sleep(2)
         return result
 
     def run(self):
         beginTime=time()
-        url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
-        i = 1
+        page = range(1, self.page+1)
         result = []
-        while i <= self.page:
-            result += self.parse(self.openUrl(url.format(self.quoteKeyword, i)))
-            i += 1
-            sleep(2)
+        pool = ThreadPool()
+        return_list = pool.map(self.parse, page, chunksize=1)
+        for record in return_list:
+            result += record
+        pool.close()
+        pool.join()
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:

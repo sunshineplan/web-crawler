@@ -5,6 +5,7 @@ import sys
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
+from multiprocessing.pool import ThreadPool
 from time import sleep
 from time import time
 from time import strftime
@@ -31,7 +32,7 @@ class JD():
         self.quoteKeyword = quote(keyword)
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
-        self.page = self.getPage()
+        self.page = int(self.getPage())
         self.fieldnames = ['Name', 'Price', 'URL']
         self.storepath = path
         self.filename = 'jingdong' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
@@ -46,6 +47,7 @@ class JD():
                 logger.error('Encounter error when opening %s', url)
                 sleep(30)
         soupContent = BeautifulSoup(html, 'html.parser')
+        sleep(1.5)
         return soupContent
 
     def getPage(self):
@@ -57,8 +59,12 @@ class JD():
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
         return page
 
-    def parse(self, content):
-        content = content.find_all('li', class_='gl-item')
+    def parse(self, page):
+        url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
+        html1 = self.openUrl(url.format(self.quoteKeyword, page * 2 - 1, page * 60 - 59))
+        html2 = self.openUrl(url.format(self.quoteKeyword, page * 2, page * 60 - 29) + '&scrolling=y')
+        content = html1.find_all('li', class_='gl-item')
+        content += html2.find_all('li', class_='gl-item')
         result = []
         for i in content:
             name = i.find('div', class_='p-name')
@@ -77,17 +83,14 @@ class JD():
 
     def run(self):
         beginTime=time()
-        url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
-        page = int(self.page)
-        i = 1
+        page = range(1, self.page+1)
         result = []
-        while i < page * 2 + 1:
-            result += self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1)))
-            i += 1
-            sleep(1.5)
-            result += self.parse(self.openUrl(url.format(self.quoteKeyword, i, (i - 1) * 30 + 1) + '&scrolling=y'))
-            i += 1
-            sleep(1.5)
+        pool = ThreadPool()
+        return_list = pool.map(self.parse, page, chunksize=1)
+        for record in return_list:
+            result += record
+        pool.close()
+        pool.join()
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:

@@ -138,7 +138,8 @@ class Amazon():
             bookList = []
             for record, id in return_list:
                 result += record
-                bookList += id
+                if id != '':
+                    bookList.append(id)
             if bookList == []:
                 break
             else:

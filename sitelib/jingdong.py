@@ -48,6 +48,15 @@ class JD():
         soupContent = BeautifulSoup(html, 'html.parser')
         return soupContent
 
+    def getPage(self):
+        html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
+        if html.find('div', class_='check-error') is not None:
+            logger.info('汪~没有找到商品。Exiting...')
+            sys.exit()
+        page = html.find('span', class_='fp-text').i.text
+        logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
+        return page
+
     def parse(self, content):
         content = content.find_all('li', class_='gl-item')
         result = []
@@ -65,15 +74,6 @@ class JD():
             except:
                 logger.error('A corrupted record was skipped.')
         return result
-
-    def getPage(self):
-        html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
-        if html.find('div', class_='check-error') is not None:
-            logger.info('汪~没有找到商品。Exiting...')
-            sys.exit()
-        page = html.find('span', class_='fp-text').i.text
-        logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
-        return page
 
     def run(self):
         beginTime=time()

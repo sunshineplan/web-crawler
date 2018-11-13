@@ -77,6 +77,7 @@ class Amazon():
                         cookies.append(i[:i.find(';')])
                 url = 'https://www.amazon.cn/gp/prime/digital-adoption/navigation-bar/{0}?type=load&isPrime=false'.format(sessionId)
                 for repeats in range(2):
+                    sleep(5)
                     request = Request(url, headers=dict(headers, **{'Cookie': ';'.join(cookies)}))
                     html = urlopen(request)
                     setCookies = html.info().get_all('Set-Cookie')

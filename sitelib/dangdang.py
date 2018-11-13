@@ -48,6 +48,22 @@ class dangdang():
         soupContent = BeautifulSoup(html, 'html.parser', from_encoding='GBK')
         return soupContent
 
+    def getPage(self):
+        html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.quoteKeyword))
+        if html.find(attrs={'name':'noResult_correct'}) is not None:
+            logger.info('抱歉，没有找到商品。Exiting...')
+            sys.exit()
+        content = html.find_all(attrs={'name':'bottom-page-turn'})
+        pageList = []
+        for i in content:
+            pageList.append(i.text)
+        try:
+            page = int(pageList[-2])
+        except:
+            page = 1
+        logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
+        return page
+
     def parse(self, html):
         html = html.find_all('li', class_=re.compile('line'))
         result = []
@@ -77,22 +93,6 @@ class dangdang():
             except:
                 logger.error('A corrupted record was skipped.')
         return result
-
-    def getPage(self):
-        html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.quoteKeyword))
-        if html.find(attrs={'name':'noResult_correct'}) is not None:
-            logger.info('抱歉，没有找到商品。Exiting...')
-            sys.exit()
-        content = html.find_all(attrs={'name':'bottom-page-turn'})
-        pageList = []
-        for i in content:
-            pageList.append(i.text)
-        try:
-            page = int(pageList[-2])
-        except:
-            page = 1
-        logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
-        return page
 
     def run(self):
         beginTime=time()

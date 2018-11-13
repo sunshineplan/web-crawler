@@ -111,10 +111,10 @@ class dangdang():
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:
-            logger.error('No such directory: "%s", use current directory instead.', self.storepath)
+            logger.error('Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         except PermissionError:
-            logger.error('Failed to write output file, use current directory and temporary filename instead.')
+            logger.error('Failed to write output file, destination file may be locked. Use current directory and temporary filename instead.')
             fullpath = saveCSV('temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

@@ -124,7 +124,7 @@ class Amazon():
         html = BeautifulSoup(decompress(html.read()), 'html.parser')
         return html
 
-    def parse(self, content, headers):
+    def parse(self, content, headers, pool):
         content = content.find_all('li', id=re.compile('result_'))
         if content == []:
             raise
@@ -132,7 +132,6 @@ class Amazon():
         result = []
         for i in content:
             bookList.append(i['data-asin'])
-        pool = ThreadPool(processes=4)
         while True:
             return_list = pool.map(partial(self.parseBook, headers=headers), bookList, chunksize=1)
             bookList = []
@@ -145,8 +144,6 @@ class Amazon():
             else:
                 sleep(60)
                 headers = self.getHeaders()
-        pool.close()
-        pool.join()
         return result, headers
 
     def parseBook(self, id, headers):
@@ -203,11 +200,12 @@ class Amazon():
             sys.exit()
         i = 1
         result = []
+        pool = ThreadPool(processes=4)
         while i <= page:
             for attempts in range(5):
                 try:
                     html = self.openUrl(url.format(self.quoteKeyword, i), headers)
-                    record, headers = self.parse(html, headers)
+                    record, headers = self.parse(html, headers, pool)
                     result += record
                     i += 1
                     error = 0
@@ -220,6 +218,8 @@ class Amazon():
                     except:
                         pass
                     error = 1
+        pool.close()
+        pool.join()
         if error == 1:
             logger.error('Job was interrupted, not all results were outputted.')
         try:

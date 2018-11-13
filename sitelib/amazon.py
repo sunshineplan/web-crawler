@@ -91,7 +91,7 @@ class Amazon():
                 break
             except:
                 logger.error('Failed to get headers. Please wait to retry...')
-                sleep(300)
+                sleep(600)
         #logger.debug('Cookies: %s', cookies)
         return {'Cookie':cookies, 'User-Agent': agent}
 
@@ -132,7 +132,7 @@ class Amazon():
         for i in content:
             bookList.append(i['data-asin'])
         while True:
-            pool = ThreadPool(processes=8)
+            pool = ThreadPool(processes=4)
             return_list = pool.map(partial(self.parseBook, headers=headers), bookList, chunksize=1)
             pool.close()
             bookList = []
@@ -145,46 +145,41 @@ class Amazon():
             else:
                 sleep(60)
                 headers = self.getHeaders()
-        #for id in bookList:
-            #record, headers = self.parseBook(id, headers)
-            #result += record
-            #sleep(4)
         return result, headers
 
     def parseBook(self, id, headers):
         result = []
         url = 'https://www.amazon.cn/dp/{0}'.format(id)
-        for attempts in range(2):
-            try:
-                html = self.openUrl(url, headers)
-                name = html.find('span', id='productTitle')
-                if name is None:
-                    name = html.find('span', id='ebooksProductTitle')
-                author = html.find('span', class_='author')
-                price = html.find('span', class_='offer-price')
-                if price is None:
+        try:
+            html = self.openUrl(url, headers)
+            name = html.find('span', id='productTitle')
+            if name is None:
+                name = html.find('span', id='ebooksProductTitle')
+            author = html.find('span', class_='author')
+            price = html.find('span', class_='offer-price')
+            if price is None:
+                try:
+                    price = html.find('tr', class_='kindle-price')
+                    price = price.find('td', class_='a-color-price')
+                except:
                     try:
-                        price = html.find('tr', class_='kindle-price')
-                        price = price.find('td', class_='a-color-price')
+                        price = html.find('div', id='buybox')
+                        price = price.find('span', class_='a-color-price')
                     except:
-                        try:
-                            price = html.find('div', id='buybox')
-                            price = price.find('span', class_='a-color-price')
-                        except:
-                            pass
-                record = {}
-                record['Name'] = name.text.strip()
-                if price is not None:
-                    record['Price'] = price.text.replace('￥', '').strip()
-                if author is not None:
-                    record['Author'] = author.a.text.strip()
-                record['URL'] = url
-                result.append(record)
-                error = 0
-                break
-            except:
-                logger.error('Failed to get book info(id: %s). Please wait to retry...', id)
-                error = 1
+                        pass
+            record = {}
+            record['Name'] = name.text.strip()
+            if price is not None:
+                record['Price'] = price.text.replace('￥', '').strip()
+            if author is not None:
+                record['Author'] = author.a.text.strip()
+            record['URL'] = url
+            result.append(record)
+            error = 0
+        except:
+            logger.error('Failed to get book info(id: %s). Please wait to retry...', id)
+            error = 1
+        sleep(4)
         if error == 1:
             return [], id
         return result, ''

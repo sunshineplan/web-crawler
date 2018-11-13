@@ -131,10 +131,9 @@ class Amazon():
         result = []
         for i in content:
             bookList.append(i['data-asin'])
+        pool = ThreadPool(processes=4)
         while True:
-            pool = ThreadPool(processes=4)
             return_list = pool.map(partial(self.parseBook, headers=headers), bookList, chunksize=1)
-            pool.close()
             bookList = []
             for record, id in return_list:
                 result += record
@@ -145,6 +144,8 @@ class Amazon():
             else:
                 sleep(60)
                 headers = self.getHeaders()
+        pool.close()
+        pool.join()
         return result, headers
 
     def parseBook(self, id, headers):

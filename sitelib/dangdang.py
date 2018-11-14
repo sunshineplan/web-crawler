@@ -52,7 +52,7 @@ class dangdang():
         html = self.openUrl('http://search.dangdang.com/?key={0}'.format(self.quoteKeyword))
         if html.find(attrs={'name':'noResult_correct'}) is not None:
             logger.info('抱歉，没有找到商品。Exiting...')
-            sys.exit()
+            raise Warning('No Results Found')
         content = html.find_all(attrs={'name':'bottom-page-turn'})
         pageList = []
         for i in content:
@@ -103,13 +103,15 @@ class dangdang():
             try:
                 page = self.getPage()
                 break
+            except Warning:
+                return
             except:
                 logger.error('Failed to get page number. Please wait to retry...')
                 sleep(30)
                 page = None
         if not page:
             logger.critical('Failed to get page number. Exiting...')
-            sys.exit()
+            return
         result = []
         pool = ThreadPool()
         return_list = pool.map(self.parse, page, chunksize=1)

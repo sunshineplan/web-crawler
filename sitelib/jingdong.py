@@ -53,7 +53,7 @@ class JD():
         html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
         if html.find('div', class_='check-error') is not None:
             logger.info('汪~没有找到商品。Exiting...')
-            sys.exit()
+            raise Warning('No Results Found')
         page = html.find('span', class_='fp-text').i.text
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
         return range(1,int(page)+1)
@@ -86,13 +86,15 @@ class JD():
             try:
                 page = self.getPage()
                 break
+            except Warning:
+                return
             except:
                 logger.error('Failed to get page number. Please wait to retry...')
                 sleep(30)
                 page = None
         if not page:
             logger.critical('Failed to get page number. Exiting...')
-            sys.exit()
+            return
         result = []
         pool = ThreadPool()
         return_list = pool.map(self.parse, page, chunksize=1)

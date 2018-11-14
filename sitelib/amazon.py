@@ -101,7 +101,7 @@ class Amazon():
         html = self.openUrl(url, headers)
         if html.find('h1', id='noResultsTitle') is not None:
             logger.info('我们找到了与 "%s" 相关的 0 条 结果', self.keyword)
-            sys.exit()
+            raise Warning('No Results Found')
         result = html.find('span', id='s-result-count').text
         _, record = result.split('共')
         record = ''.join(i for i in record if i.isdigit())
@@ -191,13 +191,15 @@ class Amazon():
                 headers = self.getHeaders()
                 page = self.getPage(headers)
                 break
+            except Warning:
+                return
             except:
                 logger.error('Failed to get page number. Please wait to retry...')
                 sleep(30)
                 page = None
         if not page:
             logger.critical('Failed to get page number. Exiting...')
-            sys.exit()
+            return
         i = 1
         result = []
         pool = ThreadPool(processes=4)

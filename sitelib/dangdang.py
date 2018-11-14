@@ -32,7 +32,6 @@ class dangdang():
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
         self.opener = build_opener()
-        self.page = self.getPage()
         self.fieldnames = ['Name', 'Now Price', 'List Price', 'Author', 'Publisher', 'URL']
         self.storepath = path
         self.filename = 'dangdang' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
@@ -63,7 +62,7 @@ class dangdang():
         except:
             page = 1
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
-        return page
+        return range(1,int(page)+1)
 
     def parse(self, page):
         url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
@@ -100,7 +99,17 @@ class dangdang():
 
     def run(self):
         beginTime=time()
-        page = range(1, self.page+1)
+        for attempts in range(3):
+            try:
+                page = self.getPage()
+                break
+            except:
+                logger.error('Failed to get page number. Please wait to retry...')
+                sleep(30)
+                page = None
+        if not page:
+            logger.critical('Failed to get page number. Exiting...')
+            sys.exit()
         result = []
         pool = ThreadPool()
         return_list = pool.map(self.parse, page, chunksize=1)

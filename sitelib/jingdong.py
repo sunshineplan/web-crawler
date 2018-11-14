@@ -32,7 +32,6 @@ class JD():
         self.quoteKeyword = quote(keyword)
         self.opener = build_opener()
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
-        self.page = int(self.getPage())
         self.fieldnames = ['Name', 'Price', 'URL']
         self.storepath = path
         self.filename = 'jingdong' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
@@ -57,7 +56,7 @@ class JD():
             sys.exit()
         page = html.find('span', class_='fp-text').i.text
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
-        return page
+        return range(1,int(page)+1)
 
     def parse(self, page):
         url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
@@ -83,7 +82,17 @@ class JD():
 
     def run(self):
         beginTime=time()
-        page = range(1, self.page+1)
+        for attempts in range(3):
+            try:
+                page = self.getPage()
+                break
+            except:
+                logger.error('Failed to get page number. Please wait to retry...')
+                sleep(30)
+                page = None
+        if not page:
+            logger.critical('Failed to get page number. Exiting...')
+            sys.exit()
         result = []
         pool = ThreadPool()
         return_list = pool.map(self.parse, page, chunksize=1)

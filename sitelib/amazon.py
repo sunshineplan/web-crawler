@@ -54,7 +54,7 @@ class Amazon():
         self.headers = {'Accept': self.accept, 'Accept-Encoding': self.acceptEncoding, 'Accept-Language': self.acceptLanguage}
         self.fieldnames = ['Name', 'Author', 'Price', 'URL']
         self.storepath = path
-        self.filename = 'amazon' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
+        self.filename = 'AZ' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def getHeaders(self):
         for attempts in range(10):

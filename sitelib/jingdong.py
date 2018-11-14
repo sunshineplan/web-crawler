@@ -34,7 +34,7 @@ class JD():
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
         self.fieldnames = ['Name', 'Price', 'URL']
         self.storepath = path
-        self.filename = 'jingdong' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
+        self.filename = 'JD' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def openUrl(self, url):
         for attempts in range(10):

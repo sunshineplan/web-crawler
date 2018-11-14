@@ -100,7 +100,7 @@ class Amazon():
         url = 'https://www.amazon.cn/s/ref=sr_pg_1?rh=n:658390051,k:{0}'.format(self.quoteKeyword)
         html = self.openUrl(url, headers)
         if html.find('h1', id='noResultsTitle') is not None:
-            logger.info('我们找到了与 "%s" 相关的 0 条 结果', self.keyword)
+            logger.info('我们找到了与 "%s" 相关的 0 条 结果。Exiting...', self.keyword)
             raise Warning('No Results Found')
         result = html.find('span', id='s-result-count').text
         _, record = result.split('共')

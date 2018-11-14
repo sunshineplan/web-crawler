@@ -21,16 +21,16 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 def MainParser():
-    parser = argparse.ArgumentParser(usage='%(prog)s [-h] <content> [<content> ...] -m <mode> [<mode> ...] [-d <dir>]')
+    parser = argparse.ArgumentParser(usage='%(prog)s [-h] <content> [<content> ...] [-m <mode> [<mode> ...]] [-d <dir>]')
     parser.add_argument(
         '-m',
         nargs='+',
-        help='choose operation mode (jd/dd/All)',
-        choices=['jd', 'dd', 'az', 'all'],
+        help='choose operation mode {az|dd|jd|All} (Default: All)',
+        choices=['az', 'dd', 'jd', 'all'],
         dest='mode',
         metavar='<mode>',
         type=str.lower,
-        required=True)
+        default=['all'])
     parser.add_argument(
         'content',
         nargs='+',
@@ -38,7 +38,7 @@ def MainParser():
         metavar='<content>')
     parser.add_argument(
         '-d',
-        help='output directory',
+        help='output directory (If not specified, the current directory is used.)',
         default='',
         dest='path',
         metavar='<dir>')
@@ -50,24 +50,24 @@ def main():
     if 'all' in parse_args.mode:
         logger.info('Operation Mode: All')
         for i in parse_args.content:
-            pool.apply_async(JD(i, parse_args.path).run)
+            pool.apply_async(Amazon(i, parse_args.path).run)
         for i in parse_args.content:
             pool.apply_async(dangdang(i, parse_args.path).run)
         for i in parse_args.content:
-            pool.apply_async(Amazon(i, parse_args.path).run)
+            pool.apply_async(JD(i, parse_args.path).run)
     else:
-        if 'jd' in parse_args.mode:
-            logger.info('Operation Mode: JD.com')
-            for i in parse_args.content:
-                pool.apply_async(JD(i, parse_args.path).run)
-        if 'dd' in parse_args.mode:
-            logger.info('Operation Mode: dangdang.com')
-            for i in parse_args.content:
-                pool.apply_async(dangdang(i, parse_args.path).run)
         if 'az' in parse_args.mode:
             logger.info('Operation Mode: amazon.cn')
             for i in parse_args.content:
                 pool.apply_async(Amazon(i, parse_args.path).run)
+        if 'dd' in parse_args.mode:
+            logger.info('Operation Mode: dangdang.com')
+            for i in parse_args.content:
+                pool.apply_async(dangdang(i, parse_args.path).run)
+        if 'jd' in parse_args.mode:
+            logger.info('Operation Mode: JD.com')
+            for i in parse_args.content:
+                pool.apply_async(JD(i, parse_args.path).run)
     pool.close()
     pool.join()
 

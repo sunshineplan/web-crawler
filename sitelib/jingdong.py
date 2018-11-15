@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import ssl
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
+from urllib.request import HTTPSHandler
 from multiprocessing.pool import ThreadPool
 from time import sleep
 from time import time
@@ -30,7 +32,10 @@ class JD():
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.opener = build_opener()
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        self.opener = build_opener(HTTPSHandler(context=context))
         self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
         self.fieldnames = ['Name', 'Price', 'URL']
         self.storepath = path

@@ -83,7 +83,7 @@ class JD():
                     record['URL'] = 'https:' + url.a['href']
                 result.append(record)
             except:
-                logger.warning('A corrupted record was skipped.')
+                logger.warning('A corrupted record was skipped.(Page: %s)', page)
         return result
 
     def run(self):

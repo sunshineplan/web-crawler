@@ -94,7 +94,7 @@ class dangdang():
                     record['URL'] = url['href']
                 result.append(record)
             except:
-                logger.warning('A corrupted record was skipped.')
+                logger.warning('A corrupted record was skipped.(Page: %s)', page)
         sleep(2)
         return result
 

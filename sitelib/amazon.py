@@ -206,7 +206,7 @@ class Amazon():
             return
         i = 1
         result = []
-        with ThreadPoolExecutor(4, 'AZT', initializer) as executor:
+        with ThreadPoolExecutor(4, 'AZT') as executor:
             while i <= page:
                 for attempts in range(5):
                     try:

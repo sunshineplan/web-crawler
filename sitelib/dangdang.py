@@ -117,7 +117,7 @@ class dangdang():
             logger.critical('Failed to get page number. Exiting...')
             return
         result = []
-        with ThreadPoolExecutor(10, 'DDT', initializer) as executor:
+        with ThreadPoolExecutor(10, 'DDT') as executor:
             try:
                 return_list = list(executor.map(self.parse, page))
             except KeyboardInterrupt:

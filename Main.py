@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import thread
 from sitelib.dangdang import dangdang
 from sitelib.jingdong import JD
 from sitelib.amazon import Amazon
@@ -46,31 +47,28 @@ def MainParser():
 
 def main():
     parse_args = MainParser().parse_args()
-    pool = ThreadPool()
     if 'all' in parse_args.mode:
         logger.info('Operation Mode: All')
-        for i in parse_args.content:
-            pool.apply_async(Amazon(i, parse_args.path).run)
-        for i in parse_args.content:
-            pool.apply_async(dangdang(i, parse_args.path).run)
-        for i in parse_args.content:
-            pool.apply_async(JD(i, parse_args.path).run)
+        selectors = ['Amazon', 'dangdang', 'JD']
     else:
+        selectors = []
         if 'az' in parse_args.mode:
             logger.info('Operation Mode: amazon.cn')
-            for i in parse_args.content:
-                pool.apply_async(Amazon(i, parse_args.path).run)
+            selectors.append('Amazon')
         if 'dd' in parse_args.mode:
             logger.info('Operation Mode: dangdang.com')
-            for i in parse_args.content:
-                pool.apply_async(dangdang(i, parse_args.path).run)
+            selectors.append('dangdang')
         if 'jd' in parse_args.mode:
             logger.info('Operation Mode: JD.com')
-            for i in parse_args.content:
-                pool.apply_async(JD(i, parse_args.path).run)
-    pool.close()
-    pool.join()
+            selectors.append('JD')
+    job = [ eval(selector + "('" + keyword + "', '" + parse_args.path + "')") for keyword in parse_args.content for selector in selectors ]
+    try:
+        with ThreadPoolExecutor(len(selectors), 'MT') as executor:
+            for i in job:
+                executor.submit(i.run)
+    except KeyboardInterrupt:
+        pass
 
-                
+
 if __name__ == '__main__':
     main()

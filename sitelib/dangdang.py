@@ -6,7 +6,8 @@ import re
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
-from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import thread
 from time import sleep
 from time import time
 from time import strftime
@@ -103,6 +104,9 @@ class dangdang():
             try:
                 page = self.getPage()
                 break
+            except KeyboardInterrupt:
+                logger.info('Job cancelled. Exiting...')
+                return
             except Warning:
                 return
             except:
@@ -113,12 +117,16 @@ class dangdang():
             logger.critical('Failed to get page number. Exiting...')
             return
         result = []
-        pool = ThreadPool()
-        return_list = pool.map(self.parse, page, chunksize=1)
-        for record in return_list:
-            result += record
-        pool.close()
-        pool.join()
+        with ThreadPoolExecutor(10, 'DDT', initializer) as executor:
+            try:
+                return_list = list(executor.map(self.parse, page))
+            except KeyboardInterrupt:
+                logger.info('Job cancelled. Exiting...')
+                executor._threads.clear()
+                thread._threads_queues.clear()
+                return
+            for record in return_list:
+                result += record
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:

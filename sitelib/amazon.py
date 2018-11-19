@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import Request
 from urllib.request import urlopen
-from multiprocessing.pool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import thread
 from functools import partial
 from gzip import decompress
 from math import ceil
@@ -124,7 +125,7 @@ class Amazon():
         html = BeautifulSoup(decompress(html.read()), 'html.parser')
         return html
 
-    def parse(self, content, headers, pool):
+    def parse(self, content, headers, executor):
         content = content.find_all('li', id=re.compile('result_'))
         if content == []:
             raise
@@ -133,7 +134,7 @@ class Amazon():
         for i in content:
             bookList.append(i['data-asin'])
         while True:
-            return_list = pool.map(partial(self.parseBook, headers=headers), bookList, chunksize=1)
+            return_list = list(executor.map(partial(self.parseBook, headers=headers), bookList))
             bookList = []
             for record, id in return_list:
                 result += record
@@ -191,6 +192,9 @@ class Amazon():
                 headers = self.getHeaders()
                 page = self.getPage(headers)
                 break
+            except KeyboardInterrupt:
+                logger.info('Job cancelled. Exiting...')
+                return
             except Warning:
                 return
             except:
@@ -202,26 +206,29 @@ class Amazon():
             return
         i = 1
         result = []
-        pool = ThreadPool(processes=4)
-        while i <= page:
-            for attempts in range(5):
-                try:
-                    html = self.openUrl(url.format(self.quoteKeyword, i), headers)
-                    record, headers = self.parse(html, headers, pool)
-                    result += record
-                    i += 1
-                    error = 0
-                    break
-                except:
-                    logger.error('Failed to parse contents(Page: %s). Please wait to retry...', i)
-                    sleep(30)
+        with ThreadPoolExecutor(4, 'AZT', initializer) as executor:
+            while i <= page:
+                for attempts in range(5):
                     try:
-                        headers = self.getHeaders()
+                        html = self.openUrl(url.format(self.quoteKeyword, i), headers)
+                        record, headers = self.parse(html, headers, executor)
+                        result += record
+                        i += 1
+                        error = 0
+                        break
+                    except KeyboardInterrupt:
+                        logger.info('Job cancelled. Exiting...')
+                        executor._threads.clear()
+                        thread._threads_queues.clear()
+                        return                            
                     except:
-                        pass
-                    error = 1
-        pool.close()
-        pool.join()
+                        logger.error('Failed to parse contents(Page: %s). Please wait to retry...', i)
+                        sleep(30)
+                        try:
+                            headers = self.getHeaders()
+                        except:
+                            pass
+                        error = 1
         if error == 1:
             logger.error('Job was interrupted, not all results were outputted.')
         try:

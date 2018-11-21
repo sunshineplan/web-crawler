@@ -39,7 +39,7 @@ class Taobao():
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
         self.opener = build_opener(HTTPSHandler(context=context))
-        self.fieldnames = ['raw_title', 'view_price', 'view_sales', 'item_loc', 'nick', 'comment_count', 'category']
+        self.fieldnames = ['Title', 'Price', 'Sales', 'Location', 'Shop', 'Comments', 'Category']
         self.storepath = path
         self.filename = 'TB' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
@@ -70,7 +70,18 @@ class Taobao():
     def parse(self, page):
         url = 'https://s.taobao.com/search?q={0}&s={1}'
         itemList = self.openUrl(url.format(self.quoteKeyword, page * 44 - 44))['mods']['itemlist']['data']['auctions']
-        return itemList
+        result = []
+        for i in itemList:
+            record = {}
+            record['Title'] = i.get('raw_title')
+            record['Price'] = i.get('view_price')
+            record['Sales'] = i.get('view_sales').replace('人付款', '')
+            record['Location'] = i.get('item_loc')
+            record['Shop'] = i.get('nick')
+            record['Comments'] = i.get('comment_count')
+            record['Category'] = i.get('category')
+            result.append(record)
+        return result
 
     def run(self):
         beginTime=time()

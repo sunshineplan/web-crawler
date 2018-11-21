@@ -50,7 +50,7 @@ def main():
     parse_args = MainParser().parse_args()
     if 'all' in parse_args.mode:
         logger.info('Operation Mode: All')
-        selectors = ['Amazon', 'dangdang', 'JD']
+        selectors = ['Amazon', 'dangdang', 'JD', 'Taobao']
     else:
         selectors = []
         if 'az' in parse_args.mode:

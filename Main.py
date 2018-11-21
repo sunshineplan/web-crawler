@@ -4,9 +4,10 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import thread
+from sitelib.amazon import Amazon
 from sitelib.dangdang import dangdang
 from sitelib.jingdong import JD
-from sitelib.amazon import Amazon
+from sitelib.taobao import Taobao
 
 import logging
 logger = logging.getLogger(__name__)
@@ -26,8 +27,8 @@ def MainParser():
     parser.add_argument(
         '-m',
         nargs='+',
-        help='choose operation mode {az|dd|jd|All} (Default: All)',
-        choices=['az', 'dd', 'jd', 'all'],
+        help='choose operation mode {az|dd|jd|tb|All} (Default: All)',
+        choices=['az', 'dd', 'jd', 'tb', 'all'],
         dest='mode',
         metavar='<mode>',
         type=str.lower,
@@ -61,6 +62,9 @@ def main():
         if 'jd' in parse_args.mode:
             logger.info('Operation Mode: JD.com')
             selectors.append('JD')
+        if 'tb' in parse_args.mode:
+            logger.info('Operation Mode: Taobao.com')
+            selectors.append('Taobao')
     job = [ eval(selector + "('" + keyword + "', '" + parse_args.path + "')") for keyword in parse_args.content for selector in selectors ]
     try:
         with ThreadPoolExecutor(len(selectors), 'MT') as executor:

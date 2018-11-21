@@ -78,7 +78,7 @@ class Amazon():
                         cookies.append(i[:i.find(';')])
                 url = 'https://www.amazon.cn/gp/prime/digital-adoption/navigation-bar/{0}?type=load&isPrime=false'.format(sessionId)
                 for repeats in range(2):
-                    sleep(2)
+                    sleep(randint(2, 5))
                     request = Request(url, headers=dict(headers, **{'Cookie': ';'.join(cookies)}))
                     html = urlopen(request)
                     setCookies = html.info().get_all('Set-Cookie')
@@ -93,7 +93,7 @@ class Amazon():
                 break
             except:
                 logger.error('Failed to get headers. Please wait to retry...')
-                sleep(600)
+                sleep(randint(500, 600))
         #logger.debug('Cookies: %s', cookies)
         return {'Cookie':cookies, 'User-Agent': agent}
 
@@ -121,7 +121,7 @@ class Amazon():
                 break
             except:
                 logger.error('Encounter error when opening %s', url)
-                sleep(30)
+                sleep(randint(30, 60))
         html = BeautifulSoup(decompress(html.read()), 'html.parser')
         return html
 
@@ -143,7 +143,7 @@ class Amazon():
             if bookList == []:
                 break
             else:
-                sleep(60)
+                sleep(randint(60,120))
                 headers = self.getHeaders()
         return result, headers
 
@@ -179,7 +179,7 @@ class Amazon():
         except:
             logger.error('Failed to get book info(id: %s). Please wait to retry...', id)
             error = 1
-        sleep(4)
+        sleep(randint(4, 8))
         if error == 1:
             return [], id
         return result, ''
@@ -199,7 +199,7 @@ class Amazon():
                 return
             except:
                 logger.error('Failed to get page number. Please wait to retry...')
-                sleep(30)
+                sleep(randint(30, 60))
                 page = None
         if not page:
             logger.critical('Failed to get page number. Exiting...')
@@ -223,7 +223,7 @@ class Amazon():
                         return                            
                     except:
                         logger.error('Failed to parse contents(Page: %s). Please wait to retry...', i)
-                        sleep(30)
+                        sleep(randint(30, 60))
                         try:
                             headers = self.getHeaders()
                         except:

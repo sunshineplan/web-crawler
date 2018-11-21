@@ -65,6 +65,7 @@ class Amazon():
                 logger.debug('User-Agent: %s', agent)
                 headers = dict(self.headers, **{'User-Agent': agent})
                 request = Request(url, headers=headers)
+                logger.debug('Getting Headers: Step 1')
                 html = urlopen(request)
                 setCookies = html.info().get_all('Set-Cookie')
                 cookies = []
@@ -77,9 +78,11 @@ class Amazon():
                     else:
                         cookies.append(i[:i.find(';')])
                 url = 'https://www.amazon.cn/gp/prime/digital-adoption/navigation-bar/{0}?type=load&isPrime=false'.format(sessionId)
+                step = 2
                 for repeats in range(2):
                     sleep(randint(2, 5))
                     request = Request(url, headers=dict(headers, **{'Cookie': ';'.join(cookies)}))
+                    logger.debug('Getting Headers: Step %s', step)
                     html = urlopen(request)
                     setCookies = html.info().get_all('Set-Cookie')
                     for i in setCookies:
@@ -87,8 +90,10 @@ class Amazon():
                             continue
                         else:
                             cookies.append(i[:i.find(';')])
+                    step += 1
                 cookies = ';'.join(list(set(cookies)))
                 if cookies == []:
+                    logger.debug('Getting Headers: Step Extra')
                     raise
                 break
             except:

@@ -107,7 +107,7 @@ class Amazon():
                 cookies = ';'.join(list(set(cookies)))
                 if cookies == []:
                     logger.debug('Getting Headers: Step Extra')
-                    raise
+                    raise ValueError('Empty cookies.')
                 break
             except:
                 logger.error('Failed to get headers. Please wait to retry...')
@@ -146,7 +146,7 @@ class Amazon():
     def parse(self, content, headers, executor):
         content = content.find_all('li', id=re.compile('result_'))
         if content == []:
-            raise
+            raise ValueError('Empty content.')
         bookList = []
         result = []
         for i in content:

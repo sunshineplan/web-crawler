@@ -110,9 +110,11 @@ class Amazon():
                     logger.debug('Getting Headers: Step Extra')
                     raise ValueError('Empty cookies.')
                 break
-            except:
+            except BaseException:
                 logger.error('Failed to get headers. Please wait to retry...')
-                sleep(randint(500, 600))
+                #logger.debug('Exception in getting headers:', exc_info=True)
+                sleep(randint(750, 1000))
+        logger.debug('Getting headers successful.')
         #logger.debug('Cookies: %s', cookies)
         return {'Cookie':cookies, 'User-Agent': agent}
 
@@ -211,6 +213,7 @@ class Amazon():
             try:
                 headers = self.getHeaders()
                 page = self.getPage(headers)
+                sleep(randint(2, 5))
                 break
             except KeyboardInterrupt:
                 logger.info('Job cancelled. Exiting...')
@@ -266,7 +269,7 @@ class Amazon():
             logger.error('Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         except PermissionError:
-            logger.error('Failed to write output file, destination file may be locked. Use current directory and temporary filename instead.')
+            logger.error('Failed to write output file(filename: %s), destination file may be locked. Use current directory and temporary filename instead.', self.filename)
             fullpath = saveCSV('temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

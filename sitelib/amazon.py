@@ -238,17 +238,26 @@ class Amazon():
                         logger.info('Job cancelled. Exiting...')
                         executor._threads.clear()
                         thread._threads_queues.clear()
-                        return                            
+                        error = 1
+                        break
                     except:
                         logger.error('Failed to parse contents(Page: %s). Please wait to retry...', i)
                         sleep(randint(30, 60))
                         try:
                             headers = self.getHeaders()
+                        except KeyboardInterrupt:
+                            logger.info('Job cancelled. Exiting...')
+                            executor._threads.clear()
+                            thread._threads_queues.clear()
+                            error = 1
+                            break
                         except:
                             pass
-                        error = 1
+                if error == 1:
+                    break
         if error == 1:
             logger.error('Job was interrupted, not all results were outputted.')
+            self.filename = 'temp.csv'
         try:
             fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
         except FileNotFoundError:

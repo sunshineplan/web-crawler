@@ -152,16 +152,19 @@ class Amazon():
         for i in content:
             bookList.append(i['data-asin'])
         while True:
-            return_list = list(executor.map(partial(self.parseBook, headers=headers), bookList))
-            bookList = []
-            for record, id in return_list:
-                result += record
-                if id != '':
-                    bookList.append(id)
-            if bookList == []:
+            try:
+                return_list = list(executor.map(partial(self.parseBook, headers=headers), bookList))
+                for record in return_list:
+                    result += record
                 break
-            else:
-                sleep(randint(60,120))
+            except KeyboardInterrupt:
+                executor._threads.clear()
+                thread._threads_queues.clear()
+                raise KeyboardInterrupt
+            except:
+                executor._threads.clear()
+                thread._threads_queues.clear()
+                sleep(randint(300, 600))
                 headers = self.getHeaders()
         return result, headers
 
@@ -193,14 +196,11 @@ class Amazon():
                 record['Author'] = author.a.text.strip()
             record['URL'] = url
             result.append(record)
-            error = 0
         except:
             logger.error('Failed to get book info(id: %s). Please wait to retry...', id)
-            error = 1
-        sleep(randint(4, 8))
-        if error == 1:
-            return [], id
-        return result, ''
+            raise RuntimeError('Can not get book info.')
+        sleep(randint(3, 5))
+        return result
 
     def run(self):
         beginTime=time()

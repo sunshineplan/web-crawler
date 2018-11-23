@@ -9,6 +9,7 @@ from urllib.request import Request
 from urllib.request import urlopen
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import thread
+from queue import SimpleQueue
 from functools import partial
 from gzip import decompress
 from math import ceil
@@ -162,6 +163,7 @@ class Amazon():
                 thread._threads_queues.clear()
                 raise KeyboardInterrupt
             except:
+                executor._work_queue = SimpleQueue()
                 executor._threads.clear()
                 thread._threads_queues.clear()
                 sleep(randint(300, 600))

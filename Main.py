@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import thread
 from sitelib.amazon import Amazon
@@ -23,7 +23,10 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 def MainParser():
-    parser = argparse.ArgumentParser(usage='%(prog)s [-h] <content> [<content> ...] [-m <mode> [<mode> ...]] [-d <dir>]')
+    parser = ArgumentParser(
+        usage='%(prog)s [-h] <content> [<content> ...] [-m <mode> [<mode> ...]] [-d <dir>]',
+        description='Collect products informations from websites.\nsupport JD.com, dangdang.com, amazon.cn(books only), taobao.com',
+        formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument(
         '-m',
         nargs='+',

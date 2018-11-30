@@ -10,6 +10,7 @@ from urllib.request import urlopen
 from urllib.request import build_opener
 from time import sleep
 from time import time
+from lib.comm import getAgents
 from lib.output import saveCSV
 
 import logging
@@ -30,7 +31,12 @@ class LiteratureEntity():
         self.LID = LID
         self.data = {'lid':LID}
         self.url = 'NNI'
-        self.agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.9 Safari/537.36'
+        agent, error = getAgents()
+        if error == 0:
+            logger.debug('Download user agents list successful.')
+        else:
+            logger.debug('Download user agents list failed. Use custom list instead.')
+        self.agent = agent[0]
         self.csrf = self.getCSRF()
         self.opener = build_opener()
         self.opener.addheaders = [('Cookie', 'XSRF-TOKEN={0}'.format(self.csrf))]

@@ -4,63 +4,26 @@
 import sys
 from json import loads
 from urllib.parse import urlencode
-from urllib.request import Request
-from urllib.request import urlopen
 from urllib.request import build_opener
 from math import ceil
 from time import sleep
 from time import time
-from lib.comm import getAgents
+sys.path.append('..')
 from lib.output import saveCSV
+from nnilib.NNI import NNI
+from nnilib.NNI import logger
 
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('NNI.log')
-#fh.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-logger.addHandler(fh)
-logger.addHandler(ch)
-
-class LiteratureList():
+class LiteratureList(NNI):
     def __init__(self, category):
+        NNI.__init__(self)
         self.category = category
         self.data = {'categoryId':category,'showMyResource':'false','showOCR':'false'}
-        self.url = 'NNI'
-        agent, error = getAgents()
-        if error == 0:
-            logger.debug('Download user agents list successful.')
-        else:
-            logger.debug('Download user agents list failed. Use custom list instead.')
-        self.agent = agent[0]
-        self.csrf = self.getCSRF()
         self.RecordsPerPage = 1000
         self.opener = build_opener()
         self.opener.addheaders = [('User-Agent', self.agent)]
         self.opener.addheaders.append(('Cookie', 'XSRF-TOKEN={0}'.format(self.csrf)))
         self.fieldnames = ['Title', 'CallNo', 'Cycle', 'DateIssued', 'PublisherUrb', 'Publisher', 'ProductKey', 'Id']
         self.filename = 'LiteratureList-' + self.category + '.csv'
-
-    def getCSRF(self):
-        request = Request(self.url, method='HEAD', headers={'User-Agent': self.agent})
-        for attempts in range(3):
-            try:
-                headers = urlopen(request)
-                cookie = headers.info().get('Set-Cookie')
-                csrf = cookie[cookie.find('=')+1:cookie.find(';')]
-                break
-            except:
-                csrf = None
-                logger.error('Failed to fetch headers.')
-                sleep(60)
-        if not csrf:
-            logger.critical('Failed to get CSRF. Exiting...')
-            sys.exit()
-        return csrf
 
     def fetch(self, url, data):
         data = urlencode(data).encode('utf8')

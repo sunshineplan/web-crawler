@@ -5,19 +5,7 @@ import argparse
 from nnilib.LiteratureEntity import LiteratureEntity
 from nnilib.LiteratureList import LiteratureList
 from nnilib.LiteratureTitle import LiteratureTitle
-
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('NNI.log')
-#fh.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-logger.addHandler(fh)
-logger.addHandler(ch)
+from nnilib.NNI import logger
 
 def MainParser():
     parser = argparse.ArgumentParser()

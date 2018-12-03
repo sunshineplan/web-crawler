@@ -59,7 +59,7 @@ class LiteratureList(NNI):
         page = self.getPage()
         i = 1
         documents = []
-        while i <= page:
+        while True:
             data['currentPage'] = i
             for attempts in range(5):
                 try:
@@ -74,6 +74,8 @@ class LiteratureList(NNI):
             if not response:
                 logger.critical("Failed to get page %s's contents. Continuing...", i)
             i += 1
+            if i > page:
+                break
             sleep(60)
         saveCSV(self.filename, self.fieldnames, documents)
         timeCost='%.2f' % (time() - beginTime)

@@ -77,10 +77,9 @@ class LiteratureTitle(NNI):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)
         data = self.data.copy()
         data['pageCount'] = self.RecordsPerPage
-        page = self.page
         i = 1
         documents = []
-        while i <= page:
+        while True:
             data['currentPage'] = i
             for attempts in range(5):
                 try:
@@ -95,6 +94,8 @@ class LiteratureTitle(NNI):
             if not response:
                 logger.critical("Failed to get page %s's contents. Continuing...", i)
             i += 1
+            if i > self.page:
+                break
             sleep(60)
         saveCSV(self.filename, self.fieldnames, documents)
         timeCost='%.2f' % (time() - beginTime)

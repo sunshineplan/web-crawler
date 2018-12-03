@@ -60,11 +60,12 @@ class LiteratureEntity(NNI):
         url = self.url + '/literature/literature/loadYearVolume?_csrf={0}'.format(self.csrf)
         data = self.data.copy()
         entity = []
-        for i in self.yearlist:
-            data['year'] = i
+        i = 0
+        while True:
+            data['year'] = self.yearlist[i]
             for attempts in range(5):
                 try:
-                    logger.debug('Fetching year %s', i)
+                    logger.debug('Fetching year %s', self.yearlist[i])
                     response = self.fetch(url, data)
                     for r in response:
                         r['Literature Name'] = self.name
@@ -72,10 +73,13 @@ class LiteratureEntity(NNI):
                     break
                 except:
                     response = None
-                    logger.error('Encounter error when opening year %s', i)
+                    logger.error('Encounter error when opening year %s', self.yearlist[i])
                     sleep(60)
             if not response:
-                logger.critical("Failed to get year %s's contents. Continuing...", i)
+                logger.critical("Failed to get year %s's contents. Continuing...", self.yearlist[i])
+            i += 1
+            if i >= len(self.yearlist):
+                break
             sleep(60)
         saveCSV(self.filename, self.fieldnames, entity)
         timeCost='%.2f' % (time() - beginTime)

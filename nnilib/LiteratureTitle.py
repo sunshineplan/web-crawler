@@ -9,6 +9,7 @@ from urllib.request import urlopen
 from math import ceil
 from time import sleep
 from time import time
+from random import randint
 sys.path.append('..')
 from lib.output import saveCSV
 from nnilib.NNI import NNI
@@ -66,7 +67,7 @@ class LiteratureTitle(NNI):
             except:
                 name = None
                 logger.error('Failed to fetch literature information.')
-                sleep(60)
+                sleep(randint(30, 60))
         if not name:
             logger.critical('Failed to get literature information. Exiting...')
             sys.exit()
@@ -90,13 +91,13 @@ class LiteratureTitle(NNI):
                 except:
                     response = None
                     logger.debug('Encounter error when opening page %s', i)
-                    sleep(60)
+                    sleep(randint(30, 60))
             if not response:
                 logger.critical("Failed to get page %s's contents. Continuing...", i)
             i += 1
             if i > self.page:
                 break
-            sleep(60)
+            sleep(randint(5, 30))
         saveCSV(self.filename, self.fieldnames, documents)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

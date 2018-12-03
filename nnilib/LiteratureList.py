@@ -8,6 +8,7 @@ from urllib.request import build_opener
 from math import ceil
 from time import sleep
 from time import time
+from random import randint
 sys.path.append('..')
 from lib.output import saveCSV
 from nnilib.NNI import NNI
@@ -45,7 +46,7 @@ class LiteratureList(NNI):
             except:
                 page = None
                 logger.error('Failed to fetch page value.')
-                sleep(60)
+                sleep(randint(30, 60))
         if not page:
             logger.critical('Failed to get page value. Exiting...')
             sys.exit()
@@ -70,13 +71,13 @@ class LiteratureList(NNI):
                 except:
                     response = None
                     logger.error('Encounter error when opening page %s', i)
-                    sleep(60)
+                    sleep(randint(30, 60))
             if not response:
                 logger.critical("Failed to get page %s's contents. Continuing...", i)
             i += 1
             if i > page:
                 break
-            sleep(60)
+            sleep(randint(5, 30))
         saveCSV(self.filename, self.fieldnames, documents)
         timeCost='%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)

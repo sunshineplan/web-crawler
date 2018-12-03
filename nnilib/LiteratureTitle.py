@@ -43,7 +43,7 @@ class LiteratureTitle():
         self.headers['User-Agent'] = self.agent
         #self.opener = build_opener()
         #self.opener.addheaders = [('Content-Type', 'application/json'), ('Cookie', 'XSRF-TOKEN={0}'.format(self.csrf))]
-        #self.opener.addheaders.append(('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.9 Safari/537.36'))
+        #self.opener.addheaders.append(('User-Agent', self.agent))
         self.name, self.category, self.page = self.getInfo()
         if self.category == 2:
             self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'Title1', 'Author1', 'Author2', 'Author3', 'CopAuthor1', 'Year', 'Volumn', 'Issue', 'Page', 'CLC', 'ProductKey', 'Id', 'Pid']

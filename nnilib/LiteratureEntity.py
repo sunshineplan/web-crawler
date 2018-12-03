@@ -66,8 +66,8 @@ class LiteratureEntity(NNI):
                 try:
                     logger.debug('Fetching year %s', i)
                     response = self.fetch(url, data)
-                    for i in response:
-                        i['Literature Name'] = self.name
+                    for r in response:
+                        r['Literature Name'] = self.name
                     entity += response
                     break
                 except:

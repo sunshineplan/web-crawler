@@ -9,6 +9,7 @@ from urllib.request import urlopen
 from math import ceil
 from time import sleep
 from time import time
+from datetime import datetime
 from random import randint
 sys.path.append('..')
 from lib.output import saveCSV
@@ -19,7 +20,7 @@ class LiteratureTitle(NNI):
     def __init__(self, LID):
         NNI.__init__(self)
         self.LID = LID
-        self.data = {'typeId':1,'start':1833,'end':2018,'literatureId':LID}
+        self.data = {'typeId':1,'start':1833,'end':datetime.now().year,'literatureId':LID}
         self.RecordsPerPage = 10000
         self.headers = {'Content-Type': 'application/json'}
         self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)

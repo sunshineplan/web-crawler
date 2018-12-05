@@ -2,10 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import json
-from urllib.request import Request
-from urllib.request import urlopen
-#from urllib.request import build_opener
 from math import ceil
 from time import sleep
 from time import time
@@ -21,13 +17,10 @@ class LiteratureTitle(NNI):
         NNI.__init__(self)
         self.LID = LID
         self.data = {'typeId':1,'start':1833,'end':datetime.now().year,'literatureId':LID}
-        self.RecordsPerPage = 10000
-        self.headers = {'Content-Type': 'application/json'}
+        self.headers = {'User-Agent': self.agent}
         self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)
-        self.headers['User-Agent'] = self.agent
-        #self.opener = build_opener()
-        #self.opener.addheaders = [('Content-Type', 'application/json'), ('Cookie', 'XSRF-TOKEN={0}'.format(self.csrf))]
-        #self.opener.addheaders.append(('User-Agent', self.agent))
+        self.headers['Content-Type'] = 'application/json'
+        self.RecordsPerPage = 10000
         self.name, self.category, self.page = self.getInfo()
         if self.category == 2:
             self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'Title1', 'Author1', 'Author2', 'Author3', 'CopAuthor1', 'Year', 'Volumn', 'Issue', 'Page', 'CLC', 'ProductKey', 'Id', 'Pid']
@@ -44,21 +37,13 @@ class LiteratureTitle(NNI):
             sys.exit()
         self.filename = self.name + '-title.csv'
 
-    def fetch(self, url, data):
-        data = json.dumps(data).encode('utf8')
-        request = Request(url, data, self.headers)
-        response = urlopen(request)
-        #response = self.opener.open(url, data)
-        jsonresponse = json.loads(response.read().decode('utf8'))
-        return jsonresponse
-
     def getInfo(self):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)
         data = self.data.copy()
         data['pageCount'] = 1
         for attempts in range(3):
             try:
-                response = self.fetch(url, data)
+                response = self.fetch(url, data, self.headers, data_type='json')
                 name = response[0]['documents'][0]['LiteratureTitle']
                 category = response[0]['documents'][0]['LiteratureCategory']
                 total = response[0]['totalCount']
@@ -86,7 +71,7 @@ class LiteratureTitle(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching page %s', i)
-                    response = self.fetch(url, data)
+                    response = self.fetch(url, data, self.headers, data_type='json')
                     documents += response[0]['documents']
                     break
                 except:

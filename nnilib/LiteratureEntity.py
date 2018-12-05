@@ -3,11 +3,8 @@
 
 import sys
 from bs4 import BeautifulSoup
-from json import loads
-from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
-from urllib.request import build_opener
 from time import sleep
 from time import time
 from random import randint
@@ -21,18 +18,11 @@ class LiteratureEntity(NNI):
         NNI.__init__(self)
         self.LID = LID
         self.data = {'lid':LID}
-        self.opener = build_opener()
-        self.opener.addheaders = [('Cookie', 'XSRF-TOKEN={0}'.format(self.csrf))]
-        self.opener.addheaders.append(('User-Agent', self.agent))
+        self.headers = {'User-Agent': self.agent}
+        self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)
         self.name, self.yearlist = self.getInfo()
         self.fieldnames = ['Literature Name', 'year', 'title', 'lid', 'entityId']
         self.filename = self.name + '-nav.csv'
-
-    def fetch(self, url, data):
-        data = urlencode(data).encode('utf8')
-        response = self.opener.open(url, data)
-        jsonresponse = loads(response.read().decode('utf8'))
-        return jsonresponse
 
     def getInfo(self):
         request = Request(self.url + '/literature/literature/' + self.LID, headers={'User-Agent': self.agent})
@@ -67,7 +57,7 @@ class LiteratureEntity(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching year %s', self.yearlist[i])
-                    response = self.fetch(url, data)
+                    response = self.fetch(url, data, self.headers)
                     for r in response:
                         r['Literature Name'] = self.name
                     entity += response

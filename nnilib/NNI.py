@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import json
+from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
 from lib.comm import getAgents
@@ -46,3 +48,14 @@ class NNI:
             logger.critical('Failed to get CSRF. Exiting...')
             sys.exit()
         return csrf
+
+    def fetch(self, url, data, headers, data_type=''):
+        if data_type == 'json':
+            data = json.dumps(data).encode('utf8')
+        else:
+            data = urlencode(data).encode('utf8')
+        request = Request(url, data, headers)
+        response = urlopen(request)
+        #logger.debug(request.header_items())
+        jsonresponse = json.loads(response.read().decode('utf8'))
+        return jsonresponse

@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from json import loads
-from urllib.parse import urlencode
-from urllib.request import build_opener
 from math import ceil
 from time import sleep
 from time import time
@@ -19,18 +16,11 @@ class LiteratureList(NNI):
         NNI.__init__(self)
         self.category = category
         self.data = {'categoryId':category,'showMyResource':'false','showOCR':'false'}
+        self.headers = {'User-Agent': self.agent}
+        self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)
         self.RecordsPerPage = 1000
-        self.opener = build_opener()
-        self.opener.addheaders = [('User-Agent', self.agent)]
-        self.opener.addheaders.append(('Cookie', 'XSRF-TOKEN={0}'.format(self.csrf)))
         self.fieldnames = ['Title', 'CallNo', 'Cycle', 'DateIssued', 'PublisherUrb', 'Publisher', 'ProductKey', 'Id']
         self.filename = 'LiteratureList-' + self.category + '.csv'
-
-    def fetch(self, url, data):
-        data = urlencode(data).encode('utf8')
-        response = self.opener.open(url, data)
-        jsonresponse = loads(response.read().decode('utf8'))
-        return jsonresponse
 
     def getPage(self):
         url = self.url + '/literature/query?_csrf={0}'.format(self.csrf)
@@ -38,7 +28,7 @@ class LiteratureList(NNI):
         data['pageCount'] = 1
         for attempts in range(3):
             try:
-                response = self.fetch(url, data)
+                response = self.fetch(url, data, self.headers)
                 total = response['totalCount']
                 page = ceil(total/self.RecordsPerPage)
                 logger.info('Category: %s, Total records: %s, Records per page: %s, Total pages: %s', self.category, total, self.RecordsPerPage, page)
@@ -65,7 +55,7 @@ class LiteratureList(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching page %s', i)
-                    response = self.fetch(url, data)
+                    response = self.fetch(url, data, self.headers)
                     documents += response['documents']
                     break
                 except:

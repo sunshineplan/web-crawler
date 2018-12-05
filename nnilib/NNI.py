@@ -6,6 +6,7 @@ import json
 from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
+from random import randint
 from lib.comm import getAgents
 
 import logging
@@ -43,7 +44,7 @@ class NNI:
             except:
                 csrf = None
                 logger.error('Failed to fetch headers.')
-                sleep(60)
+                sleep(randint(30, 60))
         if not csrf:
             logger.critical('Failed to get CSRF. Exiting...')
             sys.exit()

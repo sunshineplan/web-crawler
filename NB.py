@@ -16,6 +16,7 @@ from math import ceil
 from time import sleep
 from time import time
 from random import *
+from lib.comm import getAgent
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,7 +34,11 @@ logger.addHandler(ch)
 class NB():
     def __init__(self):
         self.url = 'NB/'
-        self.agent = self.getAgent()
+        self.agent, error = getAgent(1)
+        if error == 0:
+            logger.debug('Getting user agent successful.')
+        else:
+            logger.error('Getting user agent failed. Use custom agent instead.')
         try:
             self.cookie = self.getCookie()
         except:
@@ -49,19 +54,6 @@ class NB():
             logger.critical('Failed to fetch newspaper list. Exiting...')
             sys.exit()
         self.fieldnames = ['Title', 'Author', 'Newspaper', 'Date', 'Page', 'Link']
-
-    def getAgent(self):
-        try:
-            url = 'https://techblog.willshouse.com/2012/01/03/most-common-user-agents/'
-            request = Request(url, headers = {'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)'})
-            html = BeautifulSoup(urlopen(request), 'html.parser')
-            agent = html.find('textarea', class_='get-the-list')
-            agent = agent.text.splitlines()[0]
-            logger.debug('Getting user agent successful.')
-        except:
-            agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko'
-            logger.error('Getting user agent failed. Use custom agent instead.')
-        return agent
 
     def getCookie(self):
         request = Request(self.url, method='HEAD', headers = {'User-Agent': self.agent})

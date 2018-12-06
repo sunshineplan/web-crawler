@@ -18,7 +18,7 @@ from time import time
 from time import strftime
 from random import randint
 sys.path.append("..")
-from lib.comm import getAgents
+from lib.comm import getAgent
 from lib.output import saveCSV
 
 import logging
@@ -38,11 +38,11 @@ class Amazon():
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.agent, error = getAgents()
+        self.agent, error = getAgent(10)
         if error == 0:
-            logger.debug('Download user agents list successful.')
+            logger.debug('Getting user agents list successful.')
         else:
-            logger.debug('Download user agents list failed. Use custom list instead.')
+            logger.error('Getting user agents list failed. Use custom list instead.')
         self.accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
         self.acceptEncoding = 'gzip, deflate, br'
         self.acceptLanguage = 'en-US,en;q=0.9'

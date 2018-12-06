@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
 from random import randint
-from lib.comm import getAgents
+from lib.comm import getAgent
 
 import logging
 logger = logging.getLogger('NNI')
@@ -25,12 +25,11 @@ logger.addHandler(ch)
 class NNI:
     def __init__(self):
         self.url = 'NNI'
-        agent, error = getAgents()
+        self.agent, error = getAgent(1)
         if error == 0:
-            logger.debug('Download user agents list successful.')
+            logger.debug('Getting user agent successful.')
         else:
-            logger.debug('Download user agents list failed. Use custom list instead.')
-        self.agent = agent[0]
+            logger.error('Getting user agent failed. Use custom agent instead.')
         self.csrf = self.getCSRF()
 
     def getCSRF(self):

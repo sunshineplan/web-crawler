@@ -5,13 +5,13 @@ from bs4 import BeautifulSoup
 from urllib.request import Request
 from urllib.request import urlopen
 
-def getAgents():
+def getAgent(n=None):
     try:
         url = 'https://techblog.willshouse.com/2012/01/03/most-common-user-agents/'
         request = Request(url, headers = {'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)'})
         html = BeautifulSoup(urlopen(request), 'html.parser')
         agent = html.find('textarea', class_='get-the-list')
-        agent = agent.text.splitlines()[:10]
+        agent = agent.text.splitlines()
         error = 0
     except:
         agent = [
@@ -28,4 +28,12 @@ def getAgents():
             'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.98 Safari/537.36 LBBROWSER'
             ]
         error = 1
-    return agent, error
+    if n == 1:
+        return agent[0], error
+    elif not n:
+        return agent, error
+    else:
+        try:
+            return agent[:n], error
+        except:
+            return agent[:4], error

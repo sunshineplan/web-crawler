@@ -56,7 +56,7 @@ class NB():
         self.fieldnames = ['Title', 'Author', 'Newspaper', 'Date', 'Page', 'Link']
 
     def getCookie(self):
-        request = Request(self.url, method='HEAD', headers = {'User-Agent': self.agent})
+        request = Request(self.url, method='HEAD', headers={'User-Agent': self.agent})
         for attempts in range(3):
             try:
                 headers = urlopen(request)

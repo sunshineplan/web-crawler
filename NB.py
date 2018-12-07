@@ -112,7 +112,7 @@ class NB():
         for attempts in range(5):
             try:
                 logger.debug('Opening %s', url.replace(self.url, ''))
-                html = self.opener.open(url).read()
+                html = self.opener.open(url).read().decode(encoding='gbk', errors='ignore')
                 break
             except:
                 html = None
@@ -120,7 +120,7 @@ class NB():
         if not html:
             logger.error('Failed to open %s.', url.replace(self.url, ''))
             return None
-        soupContent = BeautifulSoup(html, 'html.parser', from_encoding='GBK')
+        soupContent = BeautifulSoup(html, 'html.parser')
         return soupContent
 
     def parse(self, page, newspaper, year):

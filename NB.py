@@ -2,13 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import re
+import os
 import sys
 from csv import DictWriter
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+from urllib.request import HTTPErrorProcessor
 from urllib.request import Request
 from urllib.request import urlopen
+from urllib.request import urlretrieve
 from urllib.request import build_opener
+from urllib.request import install_opener
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import thread
 from functools import partial
@@ -19,16 +23,21 @@ from random import *
 from lib.comm import getAgent
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('NB')
+dl_logger = logging.getLogger('NB_dl')
 logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler('NB.log')
+dl_logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('NB_crawler.log')
+dl_fh = logging.FileHandler('NB_downloader.log')
 #fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] - %(message)s')
 fh.setFormatter(formatter)
+dl_fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
+dl_logger.addHandler(dl_fh)
 logger.addHandler(ch)
 
 class NB():
@@ -44,9 +53,12 @@ class NB():
         except:
             logger.critical('Failed to get Cookie. Exiting...')
             sys.exit()
+        class NoRedirection(HTTPErrorProcessor):
+            def http_response(self, request, response):
+                return response
         self.opener = build_opener()
-        self.opener.addheaders = [('User-Agent', self.agent)]
-        self.opener.addheaders.append(('Cookie', self.cookie))
+        self.noredirect_opener = build_opener(NoRedirection)
+        self.opener.addheaders = self.noredirect_opener.addheaders = [('User-Agent', self.agent), ('Cookie', self.cookie)]
         try:
             self.newspaper = self.getNewspaper()
             shuffle(self.newspaper)
@@ -54,6 +66,9 @@ class NB():
             logger.critical('Failed to fetch newspaper list. Exiting...')
             sys.exit()
         self.fieldnames = ['Title', 'Author', 'Newspaper', 'Date', 'Page', 'Link']
+        self.DownloadExecutor = ThreadPoolExecutor(1)
+        self.last_download = ''
+        self.counter = 0
 
     def getCookie(self):
         request = Request(self.url, method='HEAD', headers={'User-Agent': self.agent})
@@ -89,9 +104,9 @@ class NB():
         content = html.find_all('a', href=re.compile('=' + newspaper + '&'))
         result = []
         for i in content:
-            year = i.text
-            result.append(year[0:4])
-        logger.info('%s Year: %s', newspaper, ','.join(result))
+            year = i.text[0:4]
+            if int(year) <= 1960:
+                result.append(year)
         return result
 
     def getPage(self, newspaper, year):
@@ -103,16 +118,15 @@ class NB():
         try:
             record = content.b.text.replace(',', '')
         except AttributeError:
-            page = 1
+            return [1]
         page = ceil((int(record)/20))
-        logger.info('%s %s Page: %s', newspaper, year, page)
         return range(1,int(page)+1)
 
     def openUrl(self, url):
         for attempts in range(5):
             try:
                 logger.debug('Opening %s', url.replace(self.url, ''))
-                html = self.opener.open(url).read().decode(encoding='gbk', errors='ignore')
+                html = urlopen(url).read().decode(encoding='gbk')
                 break
             except:
                 html = None
@@ -125,8 +139,8 @@ class NB():
 
     def parse(self, page, newspaper, year):
         sleep(randint(1, 2)+random())
-        url = self.url + 'search.jsp?menuName={0}&year={1}&d-3995381-p={2}'
-        html = self.openUrl(url.format(quote(newspaper, encoding='gbk'), year, page))
+        url = self.url + 'search.jsp?menuName={0}&year={1}&d-3995381-p={2}'.format(quote(newspaper, encoding='gbk'), year, page)
+        html = self.openUrl(url)
         if not html:
             logger.error('Failed to fetch %s %s %s content.', newspaper, year, page)
             return []
@@ -144,12 +158,46 @@ class NB():
                 record['Page'] = row[4].text.strip()
                 record['Link'] = link
                 result.append(record)
+                self.DownloadExecutor.submit(self.DownloadPDF, record)
             except:
                 logger.error('A corrupted record was skipped.(Please check %s)', url.replace(self.url, ''))
         return result
 
+    def DownloadPDF(self, record):
+        if self.last_download == '':
+            dl_logger.info('Start download.')
+        link = record['Link']
+        newspaper = record['Newspaper']
+        date = record['Date']
+        page = record['Page']
+        path = newspaper + '/' + date.split('-')[0] + '/' + ''.join(date.split('-')[1:])
+        if page == '未知':
+            request = Request(link, method='HEAD')
+            headers = self.noredirect_opener.open(request)
+            filename = headers.info().get('Location').split(';')[0].split('/')[-1].split('.')[0].lstrip('0').zfill(2) + '.pdf'
+            sleep(random())
+        else:
+            filename = page.replace('、', '_').replace('?', '等') + '.pdf'
+        fullpath = path + '/' + filename
+        if fullpath == self.last_download:
+            return
+        if os.path.isfile(fullpath):
+            dl_logger.debug('skip %s', fullpath)
+            self.last_download = fullpath
+        else:
+            if not os.path.isdir(path):
+                os.makedirs(path)
+            try:
+                dl_logger.info('downloading %s', fullpath)
+                urlretrieve(link, fullpath)
+                self.counter += 1
+            except:
+                dl_logger.error('%s download failed.(%s)', fullpath, link)
+            self.last_download = fullpath
+
     def run(self):
         beginTime=time()
+        install_opener(self.opener)
         logger.info('Newspaper List: %s', ','.join(self.newspaper))
         with open('NB.csv', 'w', encoding='utf-8-sig', newline='') as output_file:
             output = DictWriter(output_file, self.fieldnames, extrasaction='ignore')
@@ -157,12 +205,14 @@ class NB():
             for n in self.newspaper:
                 try:
                     year = self.getYear(n)
+                    logger.info('%s Year: %s', n, ','.join(year))
                 except:
                     logger.error('Failed to fetch %s year value.', n)
                     continue
                 for y in year:
                     try:
                         page = self.getPage(n, y)
+                        logger.info('%s %s Page: %s', n, y, page[-1])
                     except:
                         logger.error('Failed to fetch %s %s page value.', n, y)
                         continue
@@ -171,13 +221,23 @@ class NB():
                             return_list = list(executor.map(partial(self.parse, newspaper=n, year=y), page))
                         except KeyboardInterrupt:
                             logger.info('Job cancelled. Exiting...')
+                            dl_logger.info('Job cancelled. Exiting...')
                             executor._threads.clear()
+                            self.DownloadExecutor._threads.clear()
                             thread._threads_queues.clear()
+                            self.DownloadExecutor.shutdown()
                             return
                         for record in return_list:
                             output.writerows(record)
+                    logger.info('Current downloading process: %s', self.last_download)
+                    logger.info('Current downloaded pdf files: %s', self.counter)
+            timeCost='%.2f' % (time() - beginTime)
+            logger.info('Newspaper info crawling finished. Total time: %ss', timeCost)
+            logger.info('Please wait for the pdf download process to complete...')
+        self.DownloadExecutor.shutdown()
         timeCost='%.2f' % (time() - beginTime)
-        logger.info('Total time: %ss', timeCost)
+        dl_logger.info('Download complete. Total time: %ss', timeCost)
+        logger.info('All done. Total time: %ss', timeCost)
 
 
 if __name__ == "__main__":

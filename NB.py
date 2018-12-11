@@ -42,6 +42,7 @@ logger.addHandler(ch)
 
 class NB():
     def __init__(self):
+        self.beginTime = time()
         self.url = 'NB/'
         self.agent, error = getAgent(1)
         if error == 0:
@@ -129,8 +130,9 @@ class NB():
                 html = urlopen(url).read().decode(encoding='gbk')
                 break
             except:
-                html = None
                 logger.error('Encounter error when opening %s. Waiting for retry...', url.replace(self.url, ''))
+                html = None
+                sleep(randint(30, 60)+random())
         if not html:
             logger.error('Failed to open %s.', url.replace(self.url, ''))
             return None
@@ -187,16 +189,28 @@ class NB():
         else:
             if not os.path.isdir(path):
                 os.makedirs(path)
-            try:
-                dl_logger.info('downloading %s', fullpath)
-                urlretrieve(link, fullpath)
-                self.counter += 1
-            except:
+            for attempts in range(3):
+                try:
+                    dl_logger.info('downloading %s', fullpath)
+                    #urlretrieve(link, fullpath)
+                    with open(fullpath, 'wb') as download_file:
+                        download_file.write(urlopen(link, timeout=60).read())
+                    self.counter += 1
+                    error = 0
+                    break
+                except:
+                    dl_logger.error('Encounter error when downloading %s. Waiting for retry...', fullpath)
+                    sleep(randint(30, 60)+random())
+                    error = 1
+            if error == 1:
                 dl_logger.error('%s download failed.(%s)', fullpath, link)
+                return
             self.last_download = fullpath
 
+    def elapsedTime(self):
+        return '%.2f' % (time() - self.beginTime)
+
     def run(self):
-        beginTime=time()
         install_opener(self.opener)
         logger.info('Newspaper List: %s', ','.join(self.newspaper))
         with open('NB.csv', 'w', encoding='utf-8-sig', newline='') as output_file:
@@ -231,13 +245,12 @@ class NB():
                             output.writerows(record)
                     logger.info('Current downloading process: %s', self.last_download)
                     logger.info('Current downloaded pdf files: %s', self.counter)
-            timeCost='%.2f' % (time() - beginTime)
-            logger.info('Newspaper info crawling finished. Total time: %ss', timeCost)
+                    logger.info('Elapsed Time: %ss', self.elapsedTime())
+            logger.info('Newspaper info crawling finished. Total time: %ss', self.elapsedTime())
             logger.info('Please wait for the pdf download process to complete...')
         self.DownloadExecutor.shutdown()
-        timeCost='%.2f' % (time() - beginTime)
-        dl_logger.info('Download complete. Total time: %ss', timeCost)
-        logger.info('All done. Total time: %ss', timeCost)
+        dl_logger.info('Download complete. Total time: %ss', self.elapsedTime())
+        logger.info('All done. Total time: %ss', self.elapsedTime())
 
 
 if __name__ == "__main__":

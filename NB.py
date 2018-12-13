@@ -32,7 +32,7 @@ dl_fh = logging.FileHandler('NB_downloader.log')
 #fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] - %(message)s')
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] (%(threadName)s) - %(message)s')
 fh.setFormatter(formatter)
 dl_fh.setFormatter(formatter)
 ch.setFormatter(formatter)
@@ -67,7 +67,7 @@ class NB():
             logger.critical('Failed to fetch newspaper list. Exiting...')
             sys.exit()
         self.fieldnames = ['Title', 'Author', 'Newspaper', 'Date', 'Page', 'Link']
-        self.DownloadExecutor = ThreadPoolExecutor(1)
+        self.DownloadExecutor = ThreadPoolExecutor(1, 'DT')
         self.last_download = ''
         self.counter = 0
 
@@ -140,7 +140,10 @@ class NB():
         return soupContent
 
     def parse(self, page, newspaper, year):
-        sleep(randint(1, 2)+random())
+        if page == 2:
+            sleep(0.5)
+        elif page == 3:
+            sleep(1)
         url = self.url + 'search.jsp?menuName={0}&year={1}&d-3995381-p={2}'.format(quote(newspaper, encoding='gbk'), year, page)
         html = self.openUrl(url)
         if not html:
@@ -163,12 +166,14 @@ class NB():
                 self.DownloadExecutor.submit(self.DownloadPDF, record)
             except:
                 logger.error('A corrupted record was skipped.(Please check %s)', url.replace(self.url, ''))
+        sleep(0.5)
         return result
 
     def DownloadPDF(self, record):
         if self.last_download == '':
             dl_logger.info('Start download.')
         link = record['Link']
+        id = link.split('?')[-1]
         newspaper = record['Newspaper']
         date = record['Date']
         page = record['Page']
@@ -184,17 +189,22 @@ class NB():
         if fullpath == self.last_download:
             return
         if os.path.isfile(fullpath):
-            dl_logger.debug('skip %s', fullpath)
+            dl_logger.debug('skip %s(%s)', fullpath, id)
             self.last_download = fullpath
         else:
-            if not os.path.isdir(path):
-                os.makedirs(path)
             for attempts in range(3):
                 try:
-                    dl_logger.info('downloading %s', fullpath)
+                    dl_logger.info('downloading %s(%s)', fullpath, id)
                     #urlretrieve(link, fullpath)
+                    file = urlopen(link, timeout=60)
+                    if not file.info().get('Etag'):
+                        dl_logger.info('The file could not be found - %s', fullpath)
+                        error = 0
+                        break
+                    if not os.path.isdir(path):
+                        os.makedirs(path)
                     with open(fullpath, 'wb') as download_file:
-                        download_file.write(urlopen(link, timeout=60).read())
+                        download_file.write(file.read())
                     self.counter += 1
                     error = 0
                     break
@@ -230,7 +240,7 @@ class NB():
                     except:
                         logger.error('Failed to fetch %s %s page value.', n, y)
                         continue
-                    with ThreadPoolExecutor(3) as executor:
+                    with ThreadPoolExecutor(3, 'CT') as executor:
                         try:
                             return_list = list(executor.map(partial(self.parse, newspaper=n, year=y), page))
                         except KeyboardInterrupt:
@@ -251,6 +261,8 @@ class NB():
         self.DownloadExecutor.shutdown()
         dl_logger.info('Download complete. Total time: %ss', self.elapsedTime())
         logger.info('All done. Total time: %ss', self.elapsedTime())
+        dl_logger.info('Total downloaded files: %s', self.counter)
+        logger.info('Total downloaded files: %s', self.counter)
 
 
 if __name__ == "__main__":

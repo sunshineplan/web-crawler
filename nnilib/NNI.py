@@ -30,24 +30,30 @@ class NNI:
             logger.debug('Getting user agent successful.')
         else:
             logger.error('Getting user agent failed. Use custom agent instead.')
-        self.csrf = self.getCSRF()
+        self.cookies, self.csrf = self.getCookies()
 
-    def getCSRF(self):
+    def getCookies(self):
         request = Request(self.url, method='HEAD', headers={'User-Agent': self.agent})
         for attempts in range(3):
             try:
                 headers = urlopen(request)
-                cookie = headers.info().get('Set-Cookie')
-                csrf = cookie[cookie.find('=')+1:cookie.find(';')]
+                setCookies = headers.info().get_all('Set-Cookie')
+                cookies = []
+                for i in setCookies:
+                    if 'XSRF-TOKEN' in i:
+                        csrf = i[i.find('=')+1:i.find(';')]
+                        cookies.append(i[:i.find(';')])
+                    elif 'SESSION' in i:
+                        cookies.append(i[:i.find(';')])
                 break
             except:
-                csrf = None
+                cookies = None
                 logger.error('Failed to fetch headers.')
                 sleep(randint(30, 60))
-        if not csrf:
-            logger.critical('Failed to get CSRF. Exiting...')
+        if not cookies:
+            logger.critical('Failed to get Cookies. Exiting...')
             sys.exit()
-        return csrf
+        return ';'.join(cookies), csrf
 
     def fetch(self, url, data, headers, data_type=''):
         if data_type == 'json':

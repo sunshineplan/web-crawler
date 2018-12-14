@@ -19,13 +19,13 @@ class LiteratureEntity(NNI):
         self.LID = LID
         self.data = {'lid':LID}
         self.headers = {'User-Agent': self.agent}
-        self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)
+        self.headers['Cookie'] = self.cookies
         self.name, self.yearlist = self.getInfo()
         self.fieldnames = ['Literature Name', 'year', 'title', 'lid', 'entityId']
         self.filename = self.name + '-nav.csv'
 
     def getInfo(self):
-        request = Request(self.url + '/literature/literature/' + self.LID, headers={'User-Agent': self.agent})
+        request = Request(self.url + '/literature/literature/' + self.LID, headers=dict({'User-Agent': self.agent}, **{'Cookie': self.cookies}))
         for attempts in range(3):
             try:
                 html = urlopen(request)

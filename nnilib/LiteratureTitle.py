@@ -18,7 +18,7 @@ class LiteratureTitle(NNI):
         self.LID = LID
         self.data = {'typeId':1,'start':1833,'end':datetime.now().year,'literatureId':LID}
         self.headers = {'User-Agent': self.agent}
-        self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)
+        self.headers['Cookie'] = self.cookies
         self.headers['Content-Type'] = 'application/json'
         self.RecordsPerPage = 10000
         self.name, self.category, self.page = self.getInfo()

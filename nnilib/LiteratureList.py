@@ -17,7 +17,7 @@ class LiteratureList(NNI):
         self.category = category
         self.data = {'categoryId':category,'showMyResource':'false','showOCR':'false'}
         self.headers = {'User-Agent': self.agent}
-        self.headers['Cookie'] = 'XSRF-TOKEN={0}'.format(self.csrf)
+        self.headers['Cookie'] = self.cookies
         self.RecordsPerPage = 1000
         self.fieldnames = ['Title', 'CallNo', 'Cycle', 'DateIssued', 'PublisherUrb', 'Publisher', 'ProductKey', 'Id']
         self.filename = 'LiteratureList-' + self.category + '.csv'

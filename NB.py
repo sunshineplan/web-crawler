@@ -43,7 +43,7 @@ logger.addHandler(ch)
 class NB():
     def __init__(self):
         self.beginTime = time()
-        self.url = 'NB/'
+        self.url = 'http://202.107.212.146:8000/newspaper/'
         self.agent, error = getAgent(1)
         if error == 0:
             logger.debug('Getting user agent successful.')

@@ -43,7 +43,7 @@ logger.addHandler(ch)
 class NB():
     def __init__(self):
         self.beginTime = time()
-        self.url = 'http://202.107.212.146:8000/newspaper/'
+        self.url = 'NB/'
         self.agent, error = getAgent(1)
         if error == 0:
             logger.debug('Getting user agent successful.')
@@ -67,6 +67,8 @@ class NB():
             logger.critical('Failed to fetch newspaper list. Exiting...')
             sys.exit()
         self.fieldnames = ['Title', 'Author', 'Newspaper', 'Date', 'Page', 'Link']
+        self.workers = 2
+        self.interval = 1.2
         self.DownloadExecutor = ThreadPoolExecutor(1, 'DT')
         self.last_download = ''
         self.counter = 0
@@ -140,10 +142,9 @@ class NB():
         return soupContent
 
     def parse(self, page, newspaper, year):
-        if page == 2:
-            sleep(0.5)
-        elif page == 3:
-            sleep(1)
+        for i in range(1, self.workers+1):
+            if page == i:
+                sleep((i-1)*self.interval/self.workers)
         url = self.url + 'search.jsp?menuName={0}&year={1}&d-3995381-p={2}'.format(quote(newspaper, encoding='gbk'), year, page)
         html = self.openUrl(url)
         if not html:
@@ -166,7 +167,6 @@ class NB():
                 self.DownloadExecutor.submit(self.DownloadPDF, record)
             except:
                 logger.error('A corrupted record was skipped.(Please check %s)', url.replace(self.url, ''))
-        sleep(0.5)
         return result
 
     def DownloadPDF(self, record):
@@ -240,7 +240,7 @@ class NB():
                     except:
                         logger.error('Failed to fetch %s %s page value.', n, y)
                         continue
-                    with ThreadPoolExecutor(3, 'CT') as executor:
+                    with ThreadPoolExecutor(self.workers, 'CT') as executor:
                         try:
                             return_list = list(executor.map(partial(self.parse, newspaper=n, year=y), page))
                         except KeyboardInterrupt:

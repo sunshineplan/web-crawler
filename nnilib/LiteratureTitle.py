@@ -4,7 +4,6 @@
 import sys
 from math import ceil
 from time import sleep
-from time import time
 from datetime import datetime
 from random import randint
 sys.path.append('..')

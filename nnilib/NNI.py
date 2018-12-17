@@ -3,6 +3,7 @@
 
 import sys
 import json
+from time import time
 from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
@@ -67,5 +68,5 @@ class NNI:
         jsonresponse = json.loads(response.read().decode('utf8'))
         return jsonresponse
 
-def elapsedTime(self):
-        return '%.2f' % (time() - self.beginTime)
+    def elapsedTime(self):
+            return '%.2f' % (time() - self.beginTime)

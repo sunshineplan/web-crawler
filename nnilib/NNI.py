@@ -31,6 +31,7 @@ class NNI:
         else:
             logger.error('Getting user agent failed. Use custom agent instead.')
         self.cookies, self.csrf = self.getCookies()
+        self.beginTime = time()
 
     def getCookies(self):
         request = Request(self.url, method='HEAD', headers={'User-Agent': self.agent})
@@ -65,3 +66,6 @@ class NNI:
         #logger.debug(request.header_items())
         jsonresponse = json.loads(response.read().decode('utf8'))
         return jsonresponse
+
+def elapsedTime(self):
+        return '%.2f' % (time() - self.beginTime)

@@ -43,7 +43,6 @@ class LiteratureList(NNI):
         return page
 
     def run(self):
-        beginTime=time()
         url = self.url + '/literature/query?_csrf={0}'.format(self.csrf)
         data = self.data.copy()
         data['pageCount'] = self.RecordsPerPage
@@ -69,8 +68,7 @@ class LiteratureList(NNI):
                 break
             sleep(randint(5, 30))
         saveCSV(self.filename, self.fieldnames, documents)
-        timeCost='%.2f' % (time() - beginTime)
-        logger.info('Total time: %ss', timeCost)
+        logger.info('Total time: %ss', self.elapsedTime())
         logger.info('Output filename: %s', self.filename)
 
 if __name__ == '__main__':

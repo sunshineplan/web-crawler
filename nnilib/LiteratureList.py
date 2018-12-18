@@ -15,8 +15,6 @@ class LiteratureList(NNI):
         NNI.__init__(self)
         self.category = category
         self.data = {'categoryId':category,'showMyResource':'false','showOCR':'false'}
-        self.headers = {'User-Agent': self.agent}
-        self.headers['Cookie'] = self.cookies
         self.RecordsPerPage = 1000
         self.fieldnames = ['Title', 'CallNo', 'Cycle', 'DateIssued', 'PublisherUrb', 'Publisher', 'ProductKey', 'Id']
         self.filename = 'LiteratureList-' + self.category + '.csv'
@@ -27,7 +25,7 @@ class LiteratureList(NNI):
         data['pageCount'] = 1
         for attempts in range(3):
             try:
-                response = self.fetch(url, data, self.headers)
+                response = self.fetch(url, data)
                 total = response['totalCount']
                 page = ceil(total/self.RecordsPerPage)
                 logger.info('Category: %s, Total records: %s, Records per page: %s, Total pages: %s', self.category, total, self.RecordsPerPage, page)
@@ -53,7 +51,7 @@ class LiteratureList(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching page %s', i)
-                    response = self.fetch(url, data, self.headers)
+                    response = self.fetch(url, data)
                     documents += response['documents']
                     break
                 except:

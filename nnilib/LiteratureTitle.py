@@ -3,6 +3,7 @@
 
 import sys
 from math import ceil
+from urllib.request import urlopen
 from time import sleep
 from datetime import datetime
 from random import randint
@@ -16,9 +17,6 @@ class LiteratureTitle(NNI):
         NNI.__init__(self)
         self.LID = LID
         self.data = {'typeId':1,'start':1833,'end':datetime.now().year,'literatureId':LID}
-        self.headers = {'User-Agent': self.agent}
-        self.headers['Cookie'] = self.cookies
-        self.headers['Content-Type'] = 'application/json'
         self.RecordsPerPage = 10000
         self.name, self.category, self.page = self.getInfo()
         if self.category == 2:
@@ -42,7 +40,7 @@ class LiteratureTitle(NNI):
         data['pageCount'] = 1
         for attempts in range(3):
             try:
-                response = self.fetch(url, data, self.headers, data_type='json')
+                response = self.fetch(url, data, data_type='json')
                 name = response[0]['documents'][0]['LiteratureTitle']
                 category = response[0]['documents'][0]['LiteratureCategory']
                 total = response[0]['totalCount']
@@ -69,7 +67,7 @@ class LiteratureTitle(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching page %s', i)
-                    response = self.fetch(url, data, self.headers, data_type='json')
+                    response = self.fetch(url, data, data_type='json')
                     documents += response[0]['documents']
                     break
                 except:

@@ -7,6 +7,8 @@ from time import time
 from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
+from urllib.request import build_opener
+from urllib.request import install_opener
 from random import randint
 from lib.comm import getAgent
 
@@ -32,6 +34,9 @@ class NNI:
         else:
             logger.error('Getting user agent failed. Use custom agent instead.')
         self.cookies, self.csrf = self.getCookies()
+        self.opener = build_opener()
+        self.opener.addheaders = [('User-Agent', self.agent), ('Cookie', self.cookies)]
+        install_opener(self.opener)
         self.beginTime = time()
 
     def getCookies(self):
@@ -57,12 +62,13 @@ class NNI:
             sys.exit()
         return ';'.join(cookies), csrf
 
-    def fetch(self, url, data, headers, data_type=''):
+    def fetch(self, url, data, data_type=''):
         if data_type == 'json':
             data = json.dumps(data).encode('utf8')
+            request = Request(url, data, {'Content-Type': 'application/json'})
         else:
             data = urlencode(data).encode('utf8')
-        request = Request(url, data, headers)
+            request = Request(url, data)
         response = urlopen(request)
         #logger.debug(request.header_items())
         jsonresponse = json.loads(response.read().decode('utf8'))

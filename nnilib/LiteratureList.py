@@ -13,8 +13,9 @@ from nnilib.NNI import logger
 class LiteratureList(NNI):
     def __init__(self, category):
         NNI.__init__(self)
-        self.category = category
-        self.data = {'categoryId':category,'showMyResource':'false','showOCR':'false'}
+        self.menu = {'1': 'Modern Periodical(近代)', '2': 'Contemporary Periodical(现代)', '3': 'Chinese Newspaper', '4':'Foreign Newspaper'}
+        self.category = self.menu[category]
+        self.data = {'categoryId': category, 'showMyResource': 'false', 'showOCR': 'false'}
         self.RecordsPerPage = 1000
         self.fieldnames = ['Title', 'CallNo', 'Cycle', 'DateIssued', 'PublisherUrb', 'Publisher', 'ProductKey', 'Id']
         self.filename = 'LiteratureList-' + self.category + '.csv'

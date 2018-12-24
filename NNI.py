@@ -8,7 +8,7 @@ from nnilib.LiteratureTitle import LiteratureTitle
 from nnilib.NNI import logger
 
 def MainParser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         '-e',
@@ -17,7 +17,8 @@ def MainParser():
         dest='lid')
     group.add_argument(
         '-l',
-        help='fetching Literature List by Literature Category',
+        help='fetching Literature List by Literature Category\nCategory List[1-4]:\n1:Modern Periodical(近代) 2:Contemporary Periodical(现代)\n3:Chinese Newspaper 4:Foreign Newspaper',
+        choices=['1', '2', '3', '4'],
         metavar='<Literature Category>',
         dest='category')
     group.add_argument(

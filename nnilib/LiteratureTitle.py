@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 from math import ceil
 from urllib.request import urlopen
+from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 from datetime import datetime
 from random import randint
@@ -13,26 +15,29 @@ from nnilib.NNI import NNI
 from nnilib.NNI import logger
 
 class LiteratureTitle(NNI):
-    def __init__(self, LID):
+    def __init__(self, LID, download=False):
         NNI.__init__(self)
         self.LID = LID
-        self.data = {'typeId':1,'start':1833,'end':datetime.now().year,'literatureId':LID}
-        self.RecordsPerPage = 10000
+        self.data = {'typeId': 1, 'start': 1833, 'end': datetime.now().year, 'literatureId': LID}
+        self.RecordsPerPage = 1000
         self.name, self.category, self.page = self.getInfo()
-        if self.category == 2:
+        if self.category == 2:#Contemporary Periodical 现代期刊
             self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'Title1', 'Author1', 'Author2', 'Author3', 'CopAuthor1', 'Year', 'Volumn', 'Issue', 'Page', 'CLC', 'ProductKey', 'Id', 'Pid']
-        elif self.category == 3:
-            self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'Title1', 'Title2', 'Author1', 'Author2', 'NewsOccured', 'NewsSource', 'Category', 'Column', 'Year', 'Month', 'Day', 'BC', 'ProductKey', 'Id', 'Pid', 'Piid']
-        elif self.category == 4:
-            self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'Title1', 'Title1Cn', 'Title2', 'Title2Cn', 'Author1', 'Author2', 'NewsOccured', 'NewsSource', 'Category', 'Column', 'NewsTime', 'Year', 'Month', 'Day', 'BC', 'ProductKey', 'Id', 'Pid', 'Piid']
-        elif self.category == 6:
-            self.fieldnames = ['LiteratureTitle', 'LiteratureCategory', 'Title1', 'Title1Cn', 'Author1', 'Author2', 'Author3', 'Year', 'Month', 'Page', 'CountryArea', 'FirmAddress', 'Version', 'ProductKey', 'Id', 'Pid', 'Piid']
-        elif self.category == 7:
+        elif self.category == 3:#Chinese Newspaper
+            self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'LiteratureCategoryPieceTypeId', 'Title1', 'Title2', 'Author1', 'Author2', 'NewsOccured', 'NewsSource', 'Category', 'Column', 'Year', 'Month', 'Day', 'BC', 'ProductKey', 'Id', 'Pid', 'Piid']
+        elif self.category == 4:#Foreign Newspaper
+            self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'LiteratureCategoryPieceTypeId', 'Title1', 'Title1Cn', 'Title2', 'Title2Cn', 'Author1', 'Author2', 'NewsOccured', 'NewsSource', 'Category', 'Column', 'NewsTime', 'Year', 'Month', 'Day', 'BC', 'ProductKey', 'Id', 'Pid', 'Piid']
+        elif self.category == 6:#Hong List 07a8b7c27e6188424f460e0839f677ae
+            self.fieldnames = ['LiteratureTitle', 'LiteratureCategory', 'LiteratureCategoryPieceTypeId', 'Title1', 'Title1Cn', 'Author1', 'Author2', 'Author3', 'Year', 'Month', 'Page', 'CountryArea', 'FirmAddress', 'Version', 'ProductKey', 'Id', 'Pid', 'Piid']
+        elif self.category == 7:#Modern Periodical 近代期刊
             self.fieldnames = ['LiteratureTitle', 'CallNo', 'LiteratureCategory', 'Title1', 'Author1', 'Author2', 'Author3', 'Year', 'Volumn', 'Issue', 'PageVo', 'Page', 'CLC', 'ProductKey', 'Id', 'Pid', 'Piid']
         else:
             logger.critical('Unknow category. Exiting...')
             sys.exit()
         self.filename = self.name + '-title.csv'
+        self.DownloadExecutor = ThreadPoolExecutor(1, 'DT')
+        self.download = download
+        self.counter = 0
 
     def getInfo(self):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)
@@ -56,6 +61,51 @@ class LiteratureTitle(NNI):
             sys.exit()
         return name, category, page
 
+    def Download(self, record):
+        if self.download == False:
+            return
+        title = record['Title1']
+        literature = record['LiteratureTitle']
+        category = record['LiteratureCategory']
+        year = record['Year']
+        filename = title.replace(':', '_').replace('?', '_').replace('"', '_') + '.pdf'
+        if category == 3 or category == 4 or category == 6:#This action will be recorded as one download count(browse mode)
+            month = record.get('Month')
+            path = '{0}/{1}/{2}'.format(literature, year, str(month).zfill(2))
+            if category != 6:
+                day = record.get('Day')
+                path = '{0}/{1}/{2}{3}'.format(literature, year, str(month).zfill(2), str(day).zfill(2))
+            url = self.url + '/literature/downloadPiece?pieceId={0}&ltid={1}'.format(record['Id'], record['LiteratureCategoryPieceTypeId'])
+        elif category == 7:#This action will be recorded as one download count(preview mode)
+            issue = record.get('PageVo')
+            path = '{0}/{1}/{2}'.format(literature, year, issue)
+            url = self.url + '/literature/browsePieceX?pieceId={0}&ltid={1}'.format(record['Id'], category)
+        else:
+            logger.info('This Literature has no download resources.')
+            self.download = False
+            return
+        fullpath = path + '/' + filename
+        for attempts in range(3):
+            try:
+                file = urlopen(url, timeout=60)
+                if not file.info().get('Content-Disposition'):
+                    logger.error('You have no download permission.')
+                    self.download = False
+                    return
+                if not os.path.isdir(path):
+                    os.makedirs(path)
+                with open(fullpath, 'wb') as download_file:
+                    download_file.write(file.read())
+                self.counter += 1
+                error = 0
+                break
+            except:
+                sleep(randint(30, 60))
+                error = 1
+        if error == 1:
+            logger.error('%s download failed.', fullpath)
+        sleep(randint(50, 60))
+
     def run(self):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)
         data = self.data.copy()
@@ -69,6 +119,8 @@ class LiteratureTitle(NNI):
                     logger.debug('Fetching page %s', i)
                     response = self.fetch(url, data, data_type='json')
                     documents += response[0]['documents']
+                    if self.download == True:
+                        self.DownloadExecutor.map(self.Download, response[0]['documents'])
                     break
                 except:
                     response = None
@@ -79,10 +131,16 @@ class LiteratureTitle(NNI):
             i += 1
             if i > self.page:
                 break
-            sleep(randint(5, 30))
+            sleep(randint(5, 10))
         saveCSV(self.filename, self.fieldnames, documents)
-        logger.info('Total time: %ss', self.elapsedTime())
+        logger.info('Title info crawling finished. Total time: %ss', self.elapsedTime())
         logger.info('Output filename: %s', self.filename)
+        if self.download == True:
+            logger.info('Please wait for the download process to complete...')
+            self.DownloadExecutor.shutdown()
+            if self.download == True:
+                logger.info('All done, total time: %ss', self.elapsedTime())
+                logger.info('Total downloaded files: %s', self.counter)
 
 if __name__ == '__main__':
     job = LiteratureTitle(sys.argv[1])

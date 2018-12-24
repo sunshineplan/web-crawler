@@ -26,6 +26,10 @@ def MainParser():
         help='fetching Literature Title by Literature ID',
         metavar='<Literature ID>',
         dest='literatureId')
+    parser.add_argument(
+        '-d', '--download',
+        help='download resources if possible (use with -e or -l)',
+        action='store_true')
     return parser
 
 def main():
@@ -33,13 +37,14 @@ def main():
     if parse_args.lid is not None:
         logger.info('Operation Mode: LiteratureEntity')
         logger.info('Literature ID: %s', parse_args.lid)
-        job = LiteratureEntity(parse_args.lid)
+        job = LiteratureEntity(parse_args.lid, parse_args.download)
     elif parse_args.category is not None:
         logger.info('Operation Mode: LiteratureList')
         job = LiteratureList(parse_args.category)
     else:
-        logger.info('Operation Mode: LiteratureTitle, Literature ID: %s', parse_args.literatureId)
-        job = LiteratureTitle(parse_args.literatureId)
+        logger.info('Operation Mode: LiteratureTitle')
+        logger.info('Literature ID: %s', parse_args.literatureId)
+        job = LiteratureTitle(parse_args.literatureId, parse_args.download)
     job.run()
 
 

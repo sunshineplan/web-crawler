@@ -62,17 +62,19 @@ class NNI:
             sys.exit()
         return ';'.join(cookies), csrf
 
-    def fetch(self, url, data, data_type=''):
-        if data_type == 'json':
-            data = json.dumps(data).encode('utf8')
-            request = Request(url, data, {'Content-Type': 'application/json'})
-        else:
-            data = urlencode(data).encode('utf8')
-            request = Request(url, data)
+    def fetch(self, url, data=None, data_type=''):
+        header = {}
+        if data:
+            if data_type == 'json':
+                data = json.dumps(data).encode('utf8')
+                header = {'Content-Type': 'application/json'}
+            else:
+                data = urlencode(data).encode('utf8')
+        request = Request(url, data, header)
         response = urlopen(request)
         #logger.debug(request.header_items())
         jsonresponse = json.loads(response.read().decode('utf8'))
-        return jsonresponse
+        return jsonresponse, response.info()
 
     def elapsedTime(self):
             return '%.2f' % (time() - self.beginTime)

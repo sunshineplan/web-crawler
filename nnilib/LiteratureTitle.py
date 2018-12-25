@@ -45,7 +45,7 @@ class LiteratureTitle(NNI):
         data['pageCount'] = 1
         for attempts in range(3):
             try:
-                response = self.fetch(url, data, data_type='json')
+                response, _ = self.fetch(url, data, data_type='json')
                 name = response[0]['documents'][0]['LiteratureTitle']
                 category = response[0]['documents'][0]['LiteratureCategory']
                 total = response[0]['totalCount']
@@ -88,7 +88,7 @@ class LiteratureTitle(NNI):
         for attempts in range(3):
             try:
                 file = urlopen(url, timeout=60)
-                if not file.info().get('Content-Disposition'):
+                if not file.info().get('Content-Type'):
                     logger.error('You have no download permission.')
                     self.download = False
                     return
@@ -103,7 +103,7 @@ class LiteratureTitle(NNI):
                 sleep(randint(30, 60))
                 error = 1
         if error == 1:
-            logger.error('%s download failed.', fullpath)
+            logger.error('%s download failed.(%s)', fullpath, url)
         sleep(randint(50, 60))
 
     def run(self):
@@ -117,7 +117,7 @@ class LiteratureTitle(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching page %s', i)
-                    response = self.fetch(url, data, data_type='json')
+                    response, _ = self.fetch(url, data, data_type='json')
                     documents += response[0]['documents']
                     if self.download == True:
                         self.DownloadExecutor.map(self.Download, response[0]['documents'])

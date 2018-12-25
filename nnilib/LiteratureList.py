@@ -26,7 +26,7 @@ class LiteratureList(NNI):
         data['pageCount'] = 1
         for attempts in range(3):
             try:
-                response = self.fetch(url, data)
+                response, _ = self.fetch(url, data)
                 total = response['totalCount']
                 page = ceil(total/self.RecordsPerPage)
                 logger.info('Category: %s, Total records: %s, Records per page: %s, Total pages: %s', self.category, total, self.RecordsPerPage, page)
@@ -52,7 +52,7 @@ class LiteratureList(NNI):
             for attempts in range(5):
                 try:
                     logger.debug('Fetching page %s', i)
-                    response = self.fetch(url, data)
+                    response, _ = self.fetch(url, data)
                     documents += response['documents']
                     break
                 except:

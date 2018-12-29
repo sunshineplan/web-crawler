@@ -3,8 +3,14 @@
 
 import os
 import sys
+from base64 import b64encode
+from hashlib import sha1
+from io import BytesIO
+from zipfile import ZipFile
 from math import ceil
+from urllib.parse import urlencode
 from urllib.request import urlopen
+from urllib.request import build_opener
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 from datetime import date
@@ -37,6 +43,8 @@ class LiteratureTitle(NNI):
         self.filename = self.name + '-title.csv'
         self.DownloadExecutor = ThreadPoolExecutor(1, 'DT')
         self.download = download
+        self.download_mode = ''
+        self.api = 'NNI'
         self.counter = 0
 
     def getInfo(self):
@@ -64,6 +72,7 @@ class LiteratureTitle(NNI):
     def Download(self, record):
         if self.download == False:
             return
+        id = record['Id']
         title = record['Title1']
         literature = record['LiteratureTitle']
         category = record['LiteratureCategory']
@@ -75,27 +84,47 @@ class LiteratureTitle(NNI):
             if category != 6:
                 day = record.get('Day')
                 path = '{0}/{1}/{2}{3}'.format(literature, year, str(month).zfill(2), str(day).zfill(2))
-            url = self.url + '/literature/downloadPiece?pieceId={0}&ltid={1}'.format(record['Id'], record['LiteratureCategoryPieceTypeId'])
+            url = self.url + '/literature/downloadPiece?pieceId={0}&ltid={1}'.format(id, record['LiteratureCategoryPieceTypeId'])
         elif category == 7:#This action will be recorded as one download count(preview mode)
             issue = record.get('PageVo')
             path = '{0}/{1}/{2}'.format(literature, year, issue)
-            url = self.url + '/literature/browsePieceX?pieceId={0}&ltid={1}'.format(record['Id'], category)
+            url = self.url + '/literature/browsePieceX?pieceId={0}&ltid={1}'.format(id, category)
         else:
             logger.info('This Literature has no download resources.')
             self.download = False
             return
+        super_url = self.api + '/common/downloadResource'
+        super_key = b64encode(sha1((str(date.today()) + 'NNI').encode()).digest()).decode()
+        super_data = urlencode({'key': super_key, 'data': {'index': 0, 'type': 1, 'dataIds': [id]}}).encode()
+        super_opener = build_opener()
+        super_opener.addheaders = [('User-Agent', self.agent)]
         fullpath = path + '/' + filename
         for attempts in range(3):
             try:
-                file = urlopen(url, timeout=60)
-                if not file.info().get('Content-Type'):
-                    logger.error('You have no download permission.')
-                    self.download = False
-                    return
+                if self.download_mode != 'normal':
+                    try:
+                        zip = super_opener.open(super_url, super_data, timeout=5)
+                        with ZipFile(BytesIO(zip.read())) as zipfile:
+                            member = zipfile.namelist()[0]
+                            file = zipfile.read(member)
+                        if self.download_mode == '':
+                            logger.debug('Super download mode succeed.')
+                            self.download_mode = 'super'
+                    except:
+                        logger.debug('Super download mode failed, change to normal mode.')
+                        self.download_mode = 'normal'
+                        continue
+                else:
+                    file = urlopen(url, timeout=60)
+                    if not file.info().get('Content-Type'):
+                        logger.error('You have no download permission.')
+                        self.download = False
+                        return
+                    file = file.read()
                 if not os.path.isdir(path):
                     os.makedirs(path)
                 with open(fullpath, 'wb') as download_file:
-                    download_file.write(file.read())
+                    download_file.write(file)
                 self.counter += 1
                 error = 0
                 break
@@ -104,7 +133,8 @@ class LiteratureTitle(NNI):
                 error = 1
         if error == 1:
             logger.error('%s download failed.(%s)', fullpath, url)
-        sleep(randint(50, 60))
+        if self.download_mode == 'normal':
+            sleep(randint(50, 60))
 
     def run(self):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)

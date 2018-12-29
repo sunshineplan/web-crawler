@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
-from datetime import datetime
+from datetime import date
 from random import randint
 sys.path.append('..')
 from lib.output import saveCSV
@@ -32,7 +32,7 @@ class LiteratureEntity(NNI):
 
     def getCategory(self):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)
-        data = {'typeId': 1, 'start': 1833, 'end': datetime.now().year, 'literatureId': self.LID, 'pageCount': 1}
+        data = {'typeId': 1, 'start': 1833, 'end': date.today().year, 'literatureId': self.LID, 'pageCount': 1}
         for attempts in range(3):
             try:
                 response, _ = self.fetch(url, data, data_type='json')
@@ -72,7 +72,7 @@ class LiteratureEntity(NNI):
 
     def getTitle(self, eid):
         url = self.url + '/search/adQuery?_csrf={0}'.format(self.csrf)
-        data = {'typeId': 1, 'start': 1833, 'end': datetime.now().year, 'entityId': eid, 'pageCount': 1}
+        data = {'typeId': 1, 'start': 1833, 'end': date.today().year, 'entityId': eid, 'pageCount': 1}
         try:
             response, _ = self.fetch(url, data, data_type='json')
             month = response[0]['documents'][0]['Month']

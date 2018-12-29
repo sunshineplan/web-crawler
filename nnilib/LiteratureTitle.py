@@ -7,7 +7,7 @@ from math import ceil
 from urllib.request import urlopen
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
-from datetime import datetime
+from datetime import date
 from random import randint
 sys.path.append('..')
 from lib.output import saveCSV
@@ -18,7 +18,7 @@ class LiteratureTitle(NNI):
     def __init__(self, LID, download=False):
         NNI.__init__(self)
         self.LID = LID
-        self.data = {'typeId': 1, 'start': 1833, 'end': datetime.now().year, 'literatureId': LID}
+        self.data = {'typeId': 1, 'start': 1833, 'end': date.today().year, 'literatureId': LID}
         self.RecordsPerPage = 1000
         self.name, self.category, self.page = self.getInfo()
         if self.category == 2:#Contemporary Periodical 现代期刊

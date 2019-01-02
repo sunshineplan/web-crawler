@@ -83,7 +83,7 @@ class LiteratureEntity(NNI):
             return 'unknow'
         if self.category == 6:
             return str(month).zfill(2)
-        return '{0}{1}'.format(str(month).zfill(2), str(day).zfill(2))
+        return str(month).zfill(2) + str(day).zfill(2)
 
     def getFilenames(self, record):
         eid = record['entityId']

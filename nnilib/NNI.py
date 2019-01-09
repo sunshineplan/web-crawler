@@ -4,12 +4,14 @@
 import sys
 import json
 from time import time
+from time import sleep
 from urllib.parse import urlencode
 from urllib.request import Request
 from urllib.request import urlopen
 from urllib.request import build_opener
 from urllib.request import install_opener
 from random import randint
+sys.path.append('..')
 from lib.comm import getAgent
 
 import logging

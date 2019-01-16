@@ -1,7 +1,13 @@
 #!/usr/bin/python3
 # coding:utf-8
 
-from bs4 import BeautifulSoup
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    from sys import executable
+    from subprocess import check_call
+    check_call([executable, '-m', 'pip', 'install', 'beautifulsoup4'])
+    from bs4 import BeautifulSoup
 from urllib.request import Request
 from urllib.request import urlopen
 

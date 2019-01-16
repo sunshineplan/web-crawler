@@ -5,7 +5,12 @@ import re
 import json
 import sys
 import ssl
-from bs4 import BeautifulSoup
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    from subprocess import check_call
+    check_call([sys.executable, '-m', 'pip', 'install', 'beautifulsoup4'])
+    from bs4 import BeautifulSoup
 from urllib.parse import quote
 from urllib.request import build_opener
 from urllib.request import HTTPSHandler

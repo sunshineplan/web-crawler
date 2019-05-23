@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import json
 import re
 try:
     from bs4 import BeautifulSoup
@@ -106,13 +107,13 @@ class Amazon():
     def getPage(self, headers):
         url = 'https://www.amazon.cn/s/ref=sr_pg_1?rh=n:658390051,k:{0}'.format(self.quoteKeyword)
         html = self.openUrl(url, headers)
-        if html.find('h1', id='noResultsTitle') is not None:
-            logger.info('我们找到了与 "%s" 相关的 0 条 结果。Exiting...', self.keyword)
+        result = html.find('script', text=re.compile('totalResultCount'))
+        json_result = json.loads(result.text)
+        record = json_result['totalResultCount']
+        if record == 0:
+            logger.info('图书中没有"%s"的搜索结果。Exiting...', self.keyword)
             raise Warning('No Results Found')
-        result = html.find('span', id='s-result-count').text
-        _, record = result.split('共')
-        record = ''.join(i for i in record if i.isdigit())
-        page = ceil((int(record)/16))
+        page = ceil(record/16)
         if page > 75:
             page = 75
         logger.info('Keyword: %s, Total records: %s, Total pages: %s', self.keyword, record, page)
@@ -132,9 +133,11 @@ class Amazon():
         return html
 
     def parse(self, content, headers, executor):
-        content = content.find_all('li', id=re.compile('result_'))
-        if content == []:
+        s_result_item = content.find_all('div', class_='s-result-item')
+        if s_result_item == []:
             raise ValueError('Empty content.')
+        AdHolder = content.find_all('div', class_='AdHolder')
+        content = set(s_result_item) - set(AdHolder)
         bookList = []
         result = []
         for i in content:

@@ -44,7 +44,7 @@ class Taobao():
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
         self.opener = build_opener(HTTPSHandler(context=context))
-        self.fieldnames = ['Title', 'Price', 'Sales', 'Location', 'Shop', 'Comments', 'Category']
+        self.fieldnames = ['Title', 'Price', 'Sales', 'Location', 'Shop', 'Comments', 'Category', 'URL']
         self.storepath = path
         self.filename = 'TB' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
@@ -85,6 +85,8 @@ class Taobao():
             record['Shop'] = i.get('nick')
             record['Comments'] = i.get('comment_count')
             record['Category'] = i.get('category')
+            if i.get('detail_url'):
+                record['URL'] = 'https:' + i.get('detail_url')
             result.append(record)
         return result
 

@@ -1,54 +1,58 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
+import logging
 import ssl
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    from subprocess import check_call
-    check_call([sys.executable, '-m', 'pip', 'install', 'beautifulsoup4'])
-    from bs4 import BeautifulSoup
-from urllib.parse import quote
-from urllib.request import build_opener
-from urllib.request import HTTPSHandler
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import thread
-from time import sleep
-from time import time
-from time import strftime
+import sys
+from concurrent.futures import ThreadPoolExecutor, thread
 from random import randint
+from time import sleep, strftime, time
+from urllib.parse import quote
+from urllib.request import HTTPSHandler, build_opener
+
+from bs4 import BeautifulSoup
 sys.path.append("..")
+from lib.comm import getAgent
 from lib.output import saveCSV
 
-import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('web-crawler.log')
-#fh.setLevel(logging.DEBUG)
+# fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s(%(threadName)s) - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s] %(name)s(%(threadName)s) - %(message)s')
 fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+
 class JD():
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
+        agent, error = getAgent(1)
+        if error == 0:
+            logger.debug('Getting user agents list successful.')
+        else:
+            logger.error(
+                'Getting user agents list failed. Use custom list instead.')
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
         self.opener = build_opener(HTTPSHandler(context=context))
-        self.opener.addheaders.append(('Referer','https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword)))
+        self.opener.addheaders = []
+        self.opener.addheaders.append(('User-Agent', agent))
+        self.opener.addheaders.append(
+            ('Referer', f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8'))
         self.fieldnames = ['Name', 'Price', 'URL']
         self.storepath = path
         self.filename = 'JD' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def openUrl(self, url):
-        for attempts in range(10):
+        for _ in range(10):
             try:
                 logger.debug('Opening url %s', url)
                 html = self.opener.open(url).read()
@@ -61,18 +65,21 @@ class JD():
         return soupContent
 
     def getPage(self):
-        html = self.openUrl('https://search.jd.com/Search?keyword={0}&enc=utf-8'.format(self.quoteKeyword))
-        if html.find('div', class_='check-error') is not None:
+        html = self.openUrl(
+            f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8')
+        if html.find('div', class_='check-error') or not html.find('div', id='J_searchWrap'):
             logger.info('汪~没有找到商品。Exiting...')
             raise Warning('No Results Found')
         page = html.find('span', class_='fp-text').i.text
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
-        return range(1,int(page)+1)
+        return range(1, int(page)+1)
 
     def parse(self, page):
         url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
-        html1 = self.openUrl(url.format(self.quoteKeyword, page * 2 - 1, page * 60 - 59))
-        html2 = self.openUrl(url.format(self.quoteKeyword, page * 2, page * 60 - 29) + '&scrolling=y')
+        html1 = self.openUrl(url.format(
+            self.quoteKeyword, page * 2 - 1, page * 60 - 59))
+        html2 = self.openUrl(url.format(
+            self.quoteKeyword, page * 2, page * 60 - 29) + '&scrolling=y')
         content = html1.find_all('li', class_='gl-item')
         content += html2.find_all('li', class_='gl-item')
         result = []
@@ -88,12 +95,13 @@ class JD():
                     record['URL'] = 'https:' + url.a['href']
                 result.append(record)
             except:
-                logger.warning('A corrupted record was skipped.(Page: %s)', page)
+                logger.warning(
+                    'A corrupted record was skipped.(Page: %s)', page)
         return result
 
     def run(self):
-        beginTime=time()
-        for attempts in range(3):
+        beginTime = time()
+        for _ in range(3):
             try:
                 page = self.getPage()
                 break
@@ -103,7 +111,8 @@ class JD():
             except Warning:
                 return
             except:
-                logger.error('Failed to get page number. Please wait to retry...')
+                logger.error(
+                    'Failed to get page number. Please wait to retry...')
                 sleep(30)
                 page = None
         if not page:
@@ -121,14 +130,18 @@ class JD():
             for record in return_list:
                 result += record
         try:
-            fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
+            fullpath = saveCSV(self.filename, self.fieldnames,
+                               result, self.storepath)
         except FileNotFoundError:
-            logger.error('Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
+            logger.error(
+                'Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         except PermissionError:
-            logger.error('Failed to write output file, destination file may be locked. Use current directory and temporary filename instead.')
-            fullpath = saveCSV('temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
-        timeCost='%.2f' % (time() - beginTime)
+            logger.error(
+                'Failed to write output file, destination file may be locked. Use current directory and temporary filename instead.')
+            fullpath = saveCSV(
+                'temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
+        timeCost = '%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
         logger.info('Output filename: %s', fullpath)
 

@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import thread
+from concurrent.futures import ThreadPoolExecutor, thread
+
 from sitelib.amazon import Amazon
 from sitelib.dangdang import dangdang
 from sitelib.jingdong import JD
 from sitelib.taobao import Taobao
 
-import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('web-crawler.log')
-#fh.setLevel(logging.DEBUG)
+# fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s(%(threadName)s) - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s] %(name)s(%(threadName)s) - %(message)s')
 fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
+
 
 def MainParser():
     parser = ArgumentParser(
@@ -49,6 +51,7 @@ def MainParser():
         metavar='<dir>')
     return parser
 
+
 def main():
     parse_args = MainParser().parse_args()
     if 'all' in parse_args.mode:
@@ -68,11 +71,12 @@ def main():
         if 'tb' in parse_args.mode:
             logger.info('Operation Mode: Taobao.com')
             selectors.append('Taobao')
-    job = [ eval(selector + "('" + keyword + "', '" + parse_args.path + "')") for keyword in parse_args.content for selector in selectors ]
+    jobs = [eval(selector + "('" + keyword + "', '" + parse_args.path + "')")
+           for keyword in parse_args.content for selector in selectors]
     try:
         with ThreadPoolExecutor(len(selectors), 'MT') as executor:
-            for i in job:
-                executor.submit(i.run)
+            for job in jobs:
+                executor.submit(job.run)
     except KeyboardInterrupt:
         pass
 

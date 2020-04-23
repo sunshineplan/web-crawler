@@ -29,7 +29,7 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 
-class JD():
+class JD:
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
@@ -47,7 +47,7 @@ class JD():
         self.opener.addheaders.append(('User-Agent', agent))
         self.opener.addheaders.append(
             ('Referer', f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8'))
-        self.fieldnames = ['Name', 'Price', 'URL']
+        self.fieldnames = ['Name', 'Price','ISBN', 'URL']
         self.storepath = path
         self.filename = 'JD' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
@@ -61,7 +61,6 @@ class JD():
                 logger.error('Encounter error when opening %s', url)
                 sleep(30)
         soupContent = BeautifulSoup(html, 'html.parser')
-        sleep(1.5)
         return soupContent
 
     def getPage(self):
@@ -93,6 +92,13 @@ class JD():
                 record['Price'] = price.strong.i.text.strip()
                 if url is not None:
                     record['URL'] = 'https:' + url.a['href']
+                    try:
+                        ISBN = self.openUrl(record['URL']).find(
+                            'li', text=re.compile('ISBN'))
+                        if ISBN:
+                            record['ISBN'] = ISBN['title']
+                    except:
+                        pass
                 result.append(record)
             except:
                 logger.warning(

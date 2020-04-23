@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import ssl
+import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, thread
 from random import randint
 from time import sleep, strftime, time
 from urllib.parse import quote
-from urllib.request import HTTPSHandler, build_opener
 
+import requests
 from bs4 import BeautifulSoup
 sys.path.append("..")
 from lib.comm import getAgent
@@ -33,29 +33,22 @@ class JD:
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        agent, error = getAgent(1)
+        self.agent, error = getAgent(1)
         if error == 0:
             logger.debug('Getting user agents list successful.')
         else:
             logger.error(
                 'Getting user agents list failed. Use custom list instead.')
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-        self.opener = build_opener(HTTPSHandler(context=context))
-        self.opener.addheaders = []
-        self.opener.addheaders.append(('User-Agent', agent))
-        self.opener.addheaders.append(
-            ('Referer', f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8'))
-        self.fieldnames = ['Name', 'Price','ISBN', 'URL']
+        self.referer = f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8'
+        self.fieldnames = ['Name', 'Price', 'ISBN', 'URL']
         self.storepath = path
         self.filename = 'JD' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
-    def openUrl(self, url):
+    def openUrl(self, url, headers):
         for _ in range(10):
             try:
                 logger.debug('Opening url %s', url)
-                html = self.opener.open(url).read()
+                html = requests.get(url, headers=headers).content
                 break
             except:
                 logger.error('Encounter error when opening %s', url)
@@ -64,8 +57,9 @@ class JD:
         return soupContent
 
     def getPage(self):
+        headers = {'User-Agent': self.agent, 'Referer': self.referer}
         html = self.openUrl(
-            f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8')
+            f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8', headers=headers)
         if html.find('div', class_='check-error') or not html.find('div', id='J_searchWrap'):
             logger.info('汪~没有找到商品。Exiting...')
             raise Warning('No Results Found')
@@ -74,11 +68,12 @@ class JD:
         return range(1, int(page)+1)
 
     def parse(self, page):
+        headers = {'User-Agent': self.agent, 'Referer': self.referer}
         url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
         html1 = self.openUrl(url.format(
-            self.quoteKeyword, page * 2 - 1, page * 60 - 59))
+            self.quoteKeyword, page * 2 - 1, page * 60 - 59), headers=headers)
         html2 = self.openUrl(url.format(
-            self.quoteKeyword, page * 2, page * 60 - 29) + '&scrolling=y')
+            self.quoteKeyword, page * 2, page * 60 - 29) + '&scrolling=y', headers=headers)
         content = html1.find_all('li', class_='gl-item')
         content += html2.find_all('li', class_='gl-item')
         result = []
@@ -93,8 +88,9 @@ class JD:
                 if url is not None:
                     record['URL'] = 'https:' + url.a['href']
                     try:
-                        ISBN = self.openUrl(record['URL']).find(
-                            'li', text=re.compile('ISBN'))
+                        headers = {'User-Agent': self.agent}
+                        html = self.openUrl(record['URL'], headers=headers)
+                        ISBN = html.find('li', text=re.compile('ISBN'))
                         if ISBN:
                             record['ISBN'] = ISBN['title']
                     except:

@@ -3,17 +3,16 @@
 
 import logging
 import re
-import sys
 from concurrent.futures import ThreadPoolExecutor, thread
 from random import randint
 from time import sleep, strftime, time
 from urllib.parse import quote
-from urllib.request import build_opener
 
+import requests
 from bs4 import BeautifulSoup
-sys.path.append("..")
-from lib.output import saveCSV
 
+from crawler.lib.comm import getAgent
+from crawler.lib.output import saveCSV
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -29,91 +28,76 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 
 
-class dangdang:
+class JD:
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
-        self.opener = build_opener()
-        self.fieldnames = ['Name', 'Now Price',
-                           'List Price', 'Author', 'Publisher', 'ISBN', 'URL']
+        self.agent, error = getAgent(1)
+        if error == 0:
+            logger.debug('Getting user agents list successful.')
+        else:
+            logger.error(
+                'Getting user agents list failed. Use custom list instead.')
+        self.referer = f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8'
+        self.fieldnames = ['Name', 'Price', 'ISBN', 'URL']
         self.storepath = path
-        self.filename = 'DD' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
+        self.filename = 'JD' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
-    def openUrl(self, url):
-        for _ in range(3):
+    def openUrl(self, url, headers):
+        for _ in range(10):
             try:
                 logger.debug('Opening url %s', url)
-                html = self.opener.open(url).read()
+                html = requests.get(url, headers=headers).content
                 break
             except:
                 logger.error('Encounter error when opening %s', url)
-                html = None
-                sleep(5)
-        if html:
-            return BeautifulSoup(html, 'html.parser', from_encoding='GBK')
-        else:
-            raise Exception
+                sleep(30)
+        soupContent = BeautifulSoup(html, 'html.parser')
+        return soupContent
 
     def getPage(self):
+        headers = {'User-Agent': self.agent, 'Referer': self.referer}
         html = self.openUrl(
-            f'http://search.dangdang.com/?key={self.quoteKeyword}')
-        if html.find(attrs={'name': 'noResult_correct'}):
-            logger.info('抱歉，没有找到商品。Exiting...')
+            f'https://search.jd.com/Search?keyword={self.quoteKeyword}&enc=utf-8', headers=headers)
+        if html.find('div', class_='check-error') or not html.find('div', id='J_searchWrap'):
+            logger.info('汪~没有找到商品。Exiting...')
             raise Warning('No Results Found')
-        content = html.find_all(attrs={'name': 'bottom-page-turn'})
-        pageList = []
-        for i in content:
-            pageList.append(i.text)
-        try:
-            page = int(pageList[-2])
-        except:
-            page = 1
+        page = html.find('span', class_='fp-text').i.text
         logger.info('Keyword: %s, Total pages: %s', self.keyword, page)
         return range(1, int(page)+1)
 
     def parse(self, page):
-        url = 'http://search.dangdang.com/?key={0}&sort_type=sort_pubdate_desc&page_index={1}'
-        try:
-            html = self.openUrl(url.format(self.quoteKeyword, page))
-        except:
-            logger.error('Failed to get page %s content', page)
-        html = html.find_all('li', class_=re.compile('line'))
+        headers = {'User-Agent': self.agent, 'Referer': self.referer}
+        url = 'https://search.jd.com/s_new.php?keyword={0}&enc=utf-8&psort=6&page={1}&s={2}'
+        html1 = self.openUrl(url.format(
+            self.quoteKeyword, page * 2 - 1, page * 60 - 59), headers=headers)
+        html2 = self.openUrl(url.format(
+            self.quoteKeyword, page * 2, page * 60 - 29) + '&scrolling=y', headers=headers)
+        content = html1.find_all('li', class_='gl-item')
+        content += html2.find_all('li', class_='gl-item')
         result = []
-        for i in html:
-            name = i.find('a', attrs={'name': 'itemlist-title'})
-            now_price = i.find('span', class_='search_now_price')
-            list_price = i.find('span', class_='search_pre_price')
-            author = i.find_all('a', attrs={'name': 'itemlist-author'})
-            publisher = i.find('a', attrs={'name': 'P_cbs'})
-            url = i.find('a', attrs={'name': 'itemlist-title'})
+        for i in content:
+            name = i.find('div', class_='p-name')
+            price = i.find('div', class_='p-price')
+            url = i.find('div', class_='p-name')
             record = {}
             try:
-                record['Name'] = name.text.strip()
-                record['Now Price'] = now_price.text.replace('¥', '').strip()
-                if list_price is not None:
-                    record['List Price'] = list_price.text.replace(
-                        '¥', '').strip()
-                if author is not None:
-                    author_list = []
-                    for i in author:
-                        author_list.append(i.text.strip())
-                    record['Author'] = ','.join(author_list)
-                if publisher is not None:
-                    record['Publisher'] = publisher.text.strip()
+                record['Name'] = name.a.em.text.strip()
+                record['Price'] = price.strong.i.text.strip()
                 if url is not None:
-                    record['URL'] = url['href']
+                    record['URL'] = 'https:' + url.a['href']
                     try:
-                        ISBN = self.openUrl(url['href']).find(
-                            'li', text=re.compile('国际标准书号ISBN'))
+                        headers = {'User-Agent': self.agent}
+                        html = self.openUrl(record['URL'], headers=headers)
+                        ISBN = html.find('li', text=re.compile('ISBN'))
                         if ISBN:
-                            record['ISBN'] = ISBN.text.split('：')[-1]
+                            record['ISBN'] = ISBN['title']
                     except:
                         pass
                 result.append(record)
             except:
                 logger.warning(
                     'A corrupted record was skipped.(Page: %s)', page)
-        sleep(2)
         return result
 
     def run(self):
@@ -136,7 +120,7 @@ class dangdang:
             logger.critical('Failed to get page number. Exiting...')
             return
         result = []
-        with ThreadPoolExecutor(10, 'DDT') as executor:
+        with ThreadPoolExecutor(10, 'JDT') as executor:
             try:
                 return_list = list(executor.map(self.parse, page))
             except KeyboardInterrupt:
@@ -161,14 +145,3 @@ class dangdang:
         timeCost = '%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
         logger.info('Output filename: %s', fullpath)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        job = dangdang(sys.argv[1], sys.argv[2])
-        job.run()
-    elif len(sys.argv) == 2:
-        job = dangdang(sys.argv[1])
-        job.run()
-    else:
-        logger.critical('Wrong number of arguments.')

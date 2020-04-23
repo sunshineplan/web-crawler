@@ -1,46 +1,39 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
 import json
+import logging
 import re
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    from subprocess import check_call
-    check_call([sys.executable, '-m', 'pip', 'install', 'beautifulsoup4'])
-    from bs4 import BeautifulSoup
-from urllib.parse import quote
-from urllib.request import Request
-from urllib.request import urlopen
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import thread
-from queue import SimpleQueue
+from concurrent.futures import ThreadPoolExecutor, thread
 from functools import partial
 from gzip import decompress
 from math import ceil
-from time import sleep
-from time import time
-from time import strftime
+from queue import SimpleQueue
 from random import randint
-sys.path.append("..")
-from lib.comm import getAgent
-from lib.output import saveCSV
+from time import sleep, strftime, time
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
-import logging
+from bs4 import BeautifulSoup
+
+from crawler.lib.comm import getAgent
+from crawler.lib.output import saveCSV
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('web-crawler.log')
-#fh.setLevel(logging.DEBUG)
+# fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s(%(threadName)s) - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s [%(levelname)s] %(name)s(%(threadName)s) - %(message)s')
 fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-class Amazon():
+
+class Amazon:
     def __init__(self, keyword, path=''):
         self.keyword = keyword
         self.quoteKeyword = quote(keyword)
@@ -48,17 +41,19 @@ class Amazon():
         if error == 0:
             logger.debug('Getting user agents list successful.')
         else:
-            logger.error('Getting user agents list failed. Use custom list instead.')
+            logger.error(
+                'Getting user agents list failed. Use custom list instead.')
         self.accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
         self.acceptEncoding = 'gzip, deflate, br'
         self.acceptLanguage = 'en-US,en;q=0.9'
-        self.headers = {'Accept': self.accept, 'Accept-Encoding': self.acceptEncoding, 'Accept-Language': self.acceptLanguage}
+        self.headers = {'Accept': self.accept, 'Accept-Encoding': self.acceptEncoding,
+                        'Accept-Language': self.acceptLanguage}
         self.fieldnames = ['Name', 'Author', 'Price', 'URL']
         self.storepath = path
         self.filename = 'AZ' + strftime('%Y%m%d') + '-' + self.keyword + '.csv'
 
     def getHeaders(self):
-        for attempts in range(10):
+        for _ in range(10):
             try:
                 url = 'https://www.amazon.cn'
                 agent = self.agent[randint(0, len(self.agent)-1)]
@@ -77,11 +72,13 @@ class Amazon():
                         sessionId = i[i.find('=')+1:i.find(';')]
                     else:
                         cookies.append(i[:i.find(';')])
-                url = 'https://www.amazon.cn/gp/prime/digital-adoption/navigation-bar/{0}?type=load&isPrime=false'.format(sessionId)
+                url = 'https://www.amazon.cn/gp/prime/digital-adoption/navigation-bar/{0}?type=load&isPrime=false'.format(
+                    sessionId)
                 step = 2
-                for repeats in range(2):
+                for _ in range(2):
                     sleep(randint(2, 5))
-                    request = Request(url, headers=dict(headers, **{'Cookie': ';'.join(cookies)}))
+                    request = Request(url, headers=dict(
+                        headers, **{'Cookie': ';'.join(cookies)}))
                     logger.debug('Getting Headers: Step %s', step)
                     html = urlopen(request)
                     setCookies = html.info().get_all('Set-Cookie')
@@ -102,10 +99,11 @@ class Amazon():
                 sleep(randint(750, 1000))
         logger.debug('Getting headers successful.')
         #logger.debug('Cookies: %s', cookies)
-        return {'Cookie':cookies, 'User-Agent': agent}
+        return {'Cookie': cookies, 'User-Agent': agent}
 
     def getPage(self, headers):
-        url = 'https://www.amazon.cn/s/ref=sr_pg_1?rh=n:658390051,k:{0}'.format(self.quoteKeyword)
+        url = 'https://www.amazon.cn/s/ref=sr_pg_1?rh=n:658390051,k:{0}'.format(
+            self.quoteKeyword)
         html = self.openUrl(url, headers)
         result = html.find('script', text=re.compile('totalResultCount'))
         json_result = json.loads(result.text)
@@ -116,11 +114,12 @@ class Amazon():
         page = ceil(record/16)
         if page > 75:
             page = 75
-        logger.info('Keyword: %s, Total records: %s, Total pages: %s', self.keyword, record, page)
+        logger.info('Keyword: %s, Total records: %s, Total pages: %s',
+                    self.keyword, record, page)
         return page
 
     def openUrl(self, url, headers):
-        for attempts in range(3):
+        for _ in range(3):
             try:
                 logger.debug('Opening url %s', url)
                 request = Request(url, headers=dict(self.headers, **headers))
@@ -144,7 +143,8 @@ class Amazon():
             bookList.append(i['data-asin'])
         while True:
             try:
-                return_list = list(executor.map(partial(self.parseBook, headers=headers), bookList))
+                return_list = list(executor.map(
+                    partial(self.parseBook, headers=headers), bookList))
                 for record in return_list:
                     result += record
                 break
@@ -189,15 +189,16 @@ class Amazon():
             record['URL'] = url
             result.append(record)
         except:
-            logger.error('Failed to get book info(id: %s). Please wait to retry...', id)
+            logger.error(
+                'Failed to get book info(id: %s). Please wait to retry...', id)
             raise RuntimeError('Can not get book info.')
         sleep(randint(3, 5))
         return result
 
     def run(self):
-        beginTime=time()
+        beginTime = time()
         url = 'https://www.amazon.cn/s/ref=sr_pg_1?rh=n:658390051,k:{0}&page={1}&sort=date-desc-rank'
-        for attempts in range(5):
+        for _ in range(5):
             try:
                 headers = self.getHeaders()
                 page = self.getPage(headers)
@@ -209,7 +210,8 @@ class Amazon():
             except Warning:
                 return
             except:
-                logger.error('Failed to get page number. Please wait to retry...')
+                logger.error(
+                    'Failed to get page number. Please wait to retry...')
                 sleep(randint(30, 60))
                 page = None
         if not page:
@@ -219,9 +221,10 @@ class Amazon():
         result = []
         with ThreadPoolExecutor(4, 'AZT') as executor:
             while i <= page:
-                for attempts in range(5):
+                for _ in range(5):
                     try:
-                        html = self.openUrl(url.format(self.quoteKeyword, i), headers)
+                        html = self.openUrl(url.format(
+                            self.quoteKeyword, i), headers)
                         record, headers = self.parse(html, headers, executor)
                         result += record
                         i += 1
@@ -234,7 +237,8 @@ class Amazon():
                         error = 1
                         break
                     except:
-                        logger.error('Failed to parse contents(Page: %s). Please wait to retry...', i)
+                        logger.error(
+                            'Failed to parse contents(Page: %s). Please wait to retry...', i)
                         sleep(randint(30, 60))
                         try:
                             headers = self.getHeaders()
@@ -249,27 +253,21 @@ class Amazon():
                 if error == 1:
                     break
         if error == 1:
-            logger.error('Job was interrupted, not all results were outputted.')
+            logger.error(
+                'Job was interrupted, not all results were outputted.')
             self.filename = 'temp.csv'
         try:
-            fullpath = saveCSV(self.filename, self.fieldnames, result, self.storepath)
+            fullpath = saveCSV(self.filename, self.fieldnames,
+                               result, self.storepath)
         except FileNotFoundError:
-            logger.error('Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
+            logger.error(
+                'Failed to write output file, no such directory: "%s". Use current directory instead.', self.storepath)
             fullpath = saveCSV(self.filename, self.fieldnames, result)
         except PermissionError:
-            logger.error('Failed to write output file(filename: %s), destination file may be locked. Use current directory and temporary filename instead.', self.filename)
-            fullpath = saveCSV('temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
-        timeCost='%.2f' % (time() - beginTime)
+            logger.error(
+                'Failed to write output file(filename: %s), destination file may be locked. Use current directory and temporary filename instead.', self.filename)
+            fullpath = saveCSV(
+                'temp'+'{:04}'.format(randint(0, 9999))+'.csv', self.fieldnames, result)
+        timeCost = '%.2f' % (time() - beginTime)
         logger.info('Total time: %ss', timeCost)
         logger.info('Output filename: %s', fullpath)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        job = Amazon(sys.argv[1], sys.argv[2])
-        job.run()
-    elif len(sys.argv) == 2:
-        job = Amazon(sys.argv[1])
-        job.run()
-    else:
-        logger.critical('Wrong number of arguments.')

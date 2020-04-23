@@ -5,10 +5,10 @@ import logging
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from concurrent.futures import ThreadPoolExecutor, thread
 
-from sitelib.amazon import Amazon
-from sitelib.dangdang import dangdang
-from sitelib.jingdong import JD
-from sitelib.taobao import Taobao
+from crawler.sitelib.amazon import Amazon
+from crawler.sitelib.dangdang import dangdang
+from crawler.sitelib.jingdong import JD
+from crawler.sitelib.taobao import Taobao
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -72,7 +72,7 @@ def main():
             logger.info('Operation Mode: Taobao.com')
             selectors.append('Taobao')
     jobs = [eval(selector + "('" + keyword + "', '" + parse_args.path + "')")
-           for keyword in parse_args.content for selector in selectors]
+            for keyword in parse_args.content for selector in selectors]
     try:
         with ThreadPoolExecutor(len(selectors), 'MT') as executor:
             for job in jobs:

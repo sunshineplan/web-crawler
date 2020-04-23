@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 # coding:utf-8
 
-from csv import DictWriter
 import os
+from csv import DictWriter
+
 
 def saveCSV(filename, fieldnames, content, path=''):
     path = path.strip('"')
     if path != '':
-        if os.name=='nt':
+        if os.name == 'nt':
             path = path + '\\'
         else:
             path = path + '/'
